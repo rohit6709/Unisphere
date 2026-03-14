@@ -9,15 +9,11 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 
 export const uploadStudents = asyncHandler( async (req, res) => {
     try {
-        console.log(req.body);
-        console.log("File received: ", req.file);
         if(!req.file){
             throw new ApiError(400, 'No file uploaded');
         }
 
-        const csvData = await readCSV(req.file.path);
-        console.log(csvData);
-        
+        const csvData = await readCSV(req.file.path);        
         const students = [];
         const errors = [];
         const duplicates = [];
@@ -35,7 +31,6 @@ export const uploadStudents = asyncHandler( async (req, res) => {
             }
 
             const password = crypto.randomBytes(8).toString('hex');
-            console.log(password);
             const newUser = new Student({
                 name: user.name,
                 email: user.email,
@@ -52,7 +47,6 @@ export const uploadStudents = asyncHandler( async (req, res) => {
                 await sendMail(user.email, password);
             }
             catch(err){
-                console.log(`Failed to send email to ${user.email}: `, err);
                 errors.push({data: user, error: 'Failed to send email'});
             }
         }
@@ -63,7 +57,6 @@ export const uploadStudents = asyncHandler( async (req, res) => {
             new ApiResponse(200, { insertedCount: inserted.length, duplicates, errors }, 'Students uploaded successfully')
         );
     } catch (error) {
-        console.log("Upload error: ", error);
         throw new ApiError(500, 'Failed to upload students');
     }
 })
