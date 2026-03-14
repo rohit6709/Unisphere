@@ -41,7 +41,6 @@ const loginUser = asyncHandler( async (req, res) => {
     }
     
     const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
-    // console.log(accessToken, refreshToken);
     await Student.findByIdAndUpdate(user._id, {
         $set: { refreshToken: refreshToken }
     });
@@ -106,7 +105,6 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 })
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-    console.log(req.body);
     const { currentPassword, newPassword } = req.body;
     if(!currentPassword || !newPassword){
         throw new ApiError(400, 'Current password and new password is required');
