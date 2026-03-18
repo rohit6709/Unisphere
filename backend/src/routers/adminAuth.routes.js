@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginAdmin, logoutAdmin, createAdmin, getAllAdmins, toggleAdminStatus, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, refreshAccessToken } from '../controllers/admin.controller.js';
+import { loginAdmin, logoutAdmin, createAdmin, getAllAdmins, toggleAdminStatus, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, refreshAccessToken } from '../controllers/adminAuth.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { verifyRole } from '../middlewares/role.middleware.js';
 
