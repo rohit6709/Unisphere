@@ -46,6 +46,22 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
    },
+   isActive: {
+    type: Boolean,
+    default: true
+   },
+    passwordChangedAt: {
+        type: Date,
+        default: null
+    },
+    passwordResetToken: {
+        type: String,
+        default: undefined,
+    },
+    passwordResetExpiry: {
+        type: Date,
+        default: undefined,
+    },
     refreshToken: {
         type: String,
         default: undefined
