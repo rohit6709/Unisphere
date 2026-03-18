@@ -4,8 +4,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "dev": "nodemon src/server.js",
     "start": "nodemon src/server.js",
-    "dev": "nodemon src/server.js"
+    "seed": "node src/config/seeds/run.seed.js",
+    "seed:admin": "node src/config/seeds/run.seed.js admin"
   },
   "keywords": [],
   "author": "",
