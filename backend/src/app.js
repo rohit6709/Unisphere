@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import userRouter from './routers/auth.routes.js';
-import facultyRouter from './routers/faculty.routes.js';
-import adminRouter from './routers/admin.routes.js';
+import userRouter from './routers/studentAuth.routes.js';
+import facultyRouter from './routers/facultyAuth.routes.js';
+import adminRouter from './routers/adminAuth.routes.js';
 
 const app = express();
 
