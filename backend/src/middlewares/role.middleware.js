@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 
 export const verifyRole = (...roles) => {
-    return (req, res, next) => {
+    return (req, _res, next) => {
         if(!req.user){
             throw new ApiError(401, "Unauthorized: User not authenticated");
         }
