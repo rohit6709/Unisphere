@@ -18,7 +18,7 @@ router.route('/profile').get(verifyJWT, getProfile);
 router.route('/profile').patch(verifyJWT, updateProfile);
 
 router.route('/upload-csv').post(verifyJWT, verifyRole("admin", "superadmin"), upload.single('file'), uploadFaculty);
-router.route('/get-all-faculty').get(verifyJWT, verifyRole("admin", "hod"), getAllFaculty);
-router.route('/get-all-faculty/:facultyId/toggle-status').patch(verifyJWT, verifyRole("admin"), toggleFacultyStatus);
+router.route('/get-all-faculty').get(verifyJWT, verifyRole("admin", "superadmin", "hod"), getAllFaculty);
+router.route('/get-all-faculty/:facultyId/toggle-status').patch(verifyJWT, verifyRole("admin", "superadmin"), toggleFacultyStatus);
 
 export default router;
