@@ -228,4 +228,52 @@ const getProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "Profile fetched successfully"));
 });
 
-export { loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, forgotPassword, resetPassword, getProfile };
+const getAllStudents = asyncHandler(async (req, res) => {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const search = (req.query.search || '').trim();
+    const department = (req.query.department || '').trim();
+
+    const filter = {};
+
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+            { rollNo: { $regex: search, $options: 'i' } },
+        ];
+    }
+
+    if (department) {
+        filter.department = department;
+    }
+
+    const [students, total] = await Promise.all([
+        Student.find(filter)
+            .select('-password -refreshToken -passwordResetToken -passwordResetExpiry')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+        Student.countDocuments(filter),
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                students,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit) || 1,
+                },
+            },
+            'Students fetched successfully'
+        )
+    );
+});
+
+export { loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, forgotPassword, resetPassword, getProfile, getAllStudents };
