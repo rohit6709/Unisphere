@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginUser, logoutUser, changeCurrentPassword, forgotPassword, resetPassword, getProfile, refreshAccessToken } from '../controllers/studentAuth.controller.js';
+import { loginUser, logoutUser, changeCurrentPassword, forgotPassword, resetPassword, getProfile, refreshAccessToken, getAllStudents } from '../controllers/studentAuth.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { uploadStudents } from '../controllers/studentCSV.controller.js';
 import { upload } from '../middlewares/upload.middleware.js';
@@ -15,6 +15,7 @@ router.route('/reset-password/:token').post(resetPassword);
 router.route('/logout').post(verifyJWT, logoutUser);
 router.route('/change-password').post(verifyJWT, changeCurrentPassword);
 router.route('/profile').get(verifyJWT, getProfile);
+router.route('/').get(verifyJWT, verifyRole('admin', 'superadmin', 'hod'), getAllStudents);
 
 router.route('/upload-csv').post(verifyJWT, verifyRole("admin","superadmin"), upload.single('file'), uploadStudents);
 
