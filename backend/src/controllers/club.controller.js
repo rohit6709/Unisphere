@@ -1,4 +1,4 @@
-import { Club, club } from '../models/club.model.js';
+import { Club } from '../models/club.model.js';
 import { Student } from '../models/student.model.js';
 import { Faculty } from '../models/faculty.model.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -30,7 +30,7 @@ const resolveStudent = async (rollNo) => {
     return student;
 }
 
-const verifyClubAdvisor = async (club, userId) => {
+const verifyClubAdvisor = (club, userId) => {
     const isAdvisor = club.advisors.map(id => id.toString()).includes(userId.toString());
     if(!isAdvisor){
         throw new ApiError(403, 'You must be an advisor of this club to perform this action');
@@ -267,7 +267,7 @@ const assignVicePresident = asyncHandler(async (req, res) => {
 
     await Student.findByIdAndUpdate(student._id, { role: 'club_vice_president', club: club._id });
 
-    const updatedClub = await club.findById(clubId)
+    const updatedClub = await Club.findById(clubId)
     .populate("president", "name email rollNo")
     .populate("vicePresident", "name email rollNo")
     .populate("advisors", "name email employeeId");
@@ -492,8 +492,8 @@ const getClub = asyncHandler(async (req, res) => {
     }
 
     const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    const isAdvisor = club.advisors.map(id => id.toString()).includes(req.user._id.toString());
-    const isMember = club.members.map(id => id.toString()).includes(req.uesr._id.toString());
+    const isAdvisor = club.advisors.some(a => a._id.toString() === req.user._id.toString());
+    const isMember = club.members.some(m => m._id.toString() === req.user._id.toString());
     const isStudent = req.user.role === 'student';
 
     if(!isAdmin && !isAdvisor && !isMember && !isStudent){
