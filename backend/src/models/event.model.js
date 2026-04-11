@@ -77,16 +77,6 @@ const eventSchema = new mongoose.Schema({
         required: true,
         min: 1
     },
-    registeredMembers: [{
-        student: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Student"
-        },
-        registeredAt: {
-            type: Date,
-            default: Date.now
-        }
-    }],
     status: {
         type: String,
         enum: [
@@ -139,7 +129,7 @@ const eventSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    conflictsDetails: {
+    conflictDetails: {
         type: String,
         trim: true,
         default: null
@@ -153,17 +143,7 @@ const eventSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-eventSchema.virtual("registrationCount").get(function () {
-    return this.registeredMembers.length;
-})
 
-eventSchema.virtual("isFull").get(function () {
-    return this.registeredMembers.length >= this.maxParticipants;
-})
-
-eventSchema.virtual("spotRemaining").get(function () {
-    return Math.max(0, this.maxParticipants - this.registeredMembers.length);
-})
 
 eventSchema.set("toJSON", { virtuals: true });
 eventSchema.set("toObject", { virtuals: true });
