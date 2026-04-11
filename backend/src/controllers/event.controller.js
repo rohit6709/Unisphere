@@ -4,11 +4,11 @@ import { Event } from '../models/event.model.js';
 import { Club } from '../models/club.model.js';
 import { Registration } from '../models/registration.model.js';
 import { EventGroup } from '../models/eventGroup.model.js';
-import { ApprovalLog } from '../models/approvalLog.model';
+import { ApprovalLog } from '../models/approvallog.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { scheduleGroupDissolution, cancelGroupDissolution } from '../queues/queue.js';
+import { scheduleGroupDissolution, cancelGroupDissolution, scheduleGroupClosingWarning, cancelGroupClosingWarning } from '../queues/queue.js';
 
 const createLog = async ({
     eventId,
@@ -19,11 +19,11 @@ const createLog = async ({
     fromStatus = null,
     toStatus = null,
     reason = null,
-    metaData = null
+    metadata = null
 }) => {
     try {
         await ApprovalLog.create({
-            eventId: eventId,
+            event: eventId,
             club: clubId,
             action,
             performedBy,
@@ -31,7 +31,7 @@ const createLog = async ({
             fromStatus,
             toStatus,
             reason,
-            metaData
+            metadata
         })
     } catch (error) {
         console.error(`[AUDIT_LOG] Failed to log ${action} for event ${eventId}: `, error.message);
@@ -311,7 +311,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
         const conflict = await detectConflicts(event, event._id);
         if(conflict){
             event.hasConflict = true;
-            event.conflictsDetails = `Venue "${event.venue.name}" is already booked by "${conflict.title}" ` +
+            event.conflictDetails = `Venue "${event.venue.name}" is already booked by "${conflict.title}" ` +
                 `(${conflict.club?.name}) from ${conflict.startsAt.toISOString()} ` +
                 `to ${conflict.endsAt.toISOString()}`;
 
@@ -343,7 +343,14 @@ const reviewEvent = asyncHandler(async (req, res) => {
                     endsAt: event.endsAt
                 })
 
-                group.disolveJobId = jobId;
+                const warningJobId = await scheduleGroupClosingWarning({
+                     eventGroupId: group._id.toString(),
+                     roomId: group._id.toString(),
+                     endsAt: event.endsAt
+                })
+
+                group.dissolveJobId = jobId;
+                group.closingWarningJobId = warningJobId;
                 await group.save();
             } catch (error) {
                 console.error(`Failed to schedule group dissolution for event ${event._id}:`, error.message);
@@ -404,7 +411,7 @@ const cancelEvent = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Event not found in this club");
     }
 
-    if(!["completed", "archived", "cancelled"].includes(event.status)){
+    if(["completed", "archived", "cancelled"].includes(event.status)){
         throw new ApiError(400, `Event cannot be cancelled from ${event.status} status`);
     }
     const fromStatus = event.status;
@@ -419,12 +426,12 @@ const cancelEvent = asyncHandler(async (req, res) => {
     if(["approved", "live"].includes(fromStatus)){
         const group = await EventGroup.findOne({ event: eventId });
         if(group){
-            if(group.disolveJobId){
-                await cancelGroupDissolution(group.disolveJobId);
+            if(group.dissolveJobId){
+                await cancelGroupDissolution(group.dissolveJobId);
             }
             group.status = "dissolved";
             group.dissolvedAt = new Date();
-            group.disolveJobId = null;
+            group.dissolveJobId = null;
             await group.save();
         }
     }
@@ -499,7 +506,7 @@ const getPendingEvents = asyncHandler(async (req, res) => {
     const [events, total] = await Promise.all([
         Event.find(filter)
             .populate("submittedBy", "name rollNo")
-            .sort({ createdAt: -1 })
+            .sort({ createdAt: 1 })
             .skip(skip)
             .limit(Number(limit)),
         Event.countDocuments(filter)
@@ -521,8 +528,7 @@ const getEvent = asyncHandler(async (req, res) => {
 
     const event = await Event.findOne({ _id: eventId, club: req.club._id })
         .populate("submittedBy", "name rollNo employeeId")
-        .populate("reviewedBy", "name employeeId")
-        .populate("registeredMembers.student", "name email rollNo");
+        .populate("reviewedBy", "name employeeId");
 
         if(!event){
             throw new ApiError(404, "Event not found in this club");
@@ -545,7 +551,7 @@ const getEventLogs = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Event not found in this club");
     }
 
-    const logs = await ApprovalLog.find({ eventId: eventId })
+    const logs = await ApprovalLog.find({ event: eventId })
         .populate("performedBy", "name employeeId rollNo")
         .sort({ createdAt: 1 });
 
@@ -637,7 +643,7 @@ const getPublicEvents = asyncHandler(async (req, res) => {
     const [events, total] = await Promise.all([
         Event.find(filter)
             .populate("club", "name department")
-            .populate("-conflictDetails -hasConflict")
+            .select("-conflictDetails -hasConflict")
             .sort({ isFeatured: -1, startsAt: 1 })
             .skip(skip)
             .limit(Number(limit)),
