@@ -4,6 +4,8 @@ import { Faculty } from '../models/faculty.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { notificationService } from '../services/notificationService.js';
+import { model } from 'mongoose';
 
 const resolveFaculty = async (employeeId) => {
     if(!employeeId){
@@ -181,6 +183,22 @@ const reviewClubRequest = asyncHandler(async (req, res) => {
     }
     await club.save();
 
+    if(club.requestedBy){
+        if(action === "approve"){
+            notificationService.notifyClubRequestApproved({
+                clubName: club.name,
+                recipients: [{ id: club.requestedBy, model: 'Student' }]
+            }).catch(err => console.error("Failed to send club approval notification", err));
+        }
+        else{
+            notificationService.notifyClubRequestRejected({
+                clubName: club.name,
+                reason: club.rejectionReason.trim(),
+                recipients: [{ id: club.requestedBy, model: 'Student' }]
+            }).catch(err => console.error("Failed to send club rejection notification", err));
+        }
+    }
+
     return res.status(200)
     .json(new ApiResponse(200, club, `Club request ${action === "approve" ? "approved" : "rejected"} successfully`));
 })
@@ -227,6 +245,13 @@ const assignPresident = asyncHandler(async (req, res) => {
     .populate("vicePresident", "name email rollNo")
     .populate("advisors", "name email employeeId");
 
+    notificationService.notifyRoleAssigned({
+        clubName: club.name,
+        role: "President",
+        recipients: [{ id: student._id, model: 'Student' }],
+        data: { clubId: clubId.toString() }
+    }).catch(err => console.error("Failed to send role assignment notification", err));
+
     return res.status(200)
     .json(new ApiResponse(200, updatedClub, "Club president assigned successfully"));
 })
@@ -271,6 +296,13 @@ const assignVicePresident = asyncHandler(async (req, res) => {
     .populate("president", "name email rollNo")
     .populate("vicePresident", "name email rollNo")
     .populate("advisors", "name email employeeId");
+
+    notificationService.notifyRoleAssigned({
+        clubName: club.name,
+        role: "Vice President",
+        recipients: [{ id: student._id, model: 'Student' }],
+        data: { clubId: clubId.toString() }
+    }).catch(err => console.error("Failed to send role assignment notification", err));
 
     return res.status(200)
     .json(new ApiResponse(200, updatedClub, "Club vice president assigned successfully"));
@@ -429,6 +461,11 @@ const removeMember = asyncHandler(async (req, res) => {
     club.members = club.members.filter(id => id.toString() !== student._id.toString());
 
     await club.save();
+
+    notificationService.notifyMemberRemoved({
+        clubName: club.name,
+        recipients: [{ id: student._id, model: 'Student' }]
+    }).catch(err => console.error("Failed to send member removal notification", err));
 
     return res.status(200)
     .json(new ApiResponse(200, {}, "Member removed from club successfully"));
