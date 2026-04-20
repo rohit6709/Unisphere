@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { INTEREST_CATEGORIES } from "../constants/interests.js";
 
 const clubSchema = new mongoose.Schema({
     name: {
@@ -42,7 +43,7 @@ const clubSchema = new mongoose.Schema({
     },
     requestedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Faculty',
+        ref: 'Student',
         default: null
     },
     approvedBy: {
@@ -58,6 +59,18 @@ const clubSchema = new mongoose.Schema({
         type: String,
         trim: true,
         default: null
+    },
+    tags: {
+        predefined: [{
+            type: String,
+            enum: INTEREST_CATEGORIES
+        }],
+        custom: [{
+            type: String,
+            trim: true,
+            maxlength: 30,
+            lowercase: true
+        }]
     }
 }, { timestamps: true });
 
@@ -68,5 +81,8 @@ clubSchema.virtual('memberCount').get(function() {
 
 clubSchema.set('toJSON', { virtuals: true });
 clubSchema.set('toObject', { virtuals: true });
+
+clubSchema.index({ "tags.predefined": 1 });
+clubSchema.index({ status: 1, "tags.predefined": 1 });
 
 export const Club = mongoose.model('Club', clubSchema);
