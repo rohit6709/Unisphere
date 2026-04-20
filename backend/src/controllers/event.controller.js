@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import mongoose from 'mongoose';
+import mongoose, { model } from 'mongoose';
 import { Event } from '../models/event.model.js';
 import { Club } from '../models/club.model.js';
 import { Registration } from '../models/registration.model.js';
@@ -9,6 +9,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { scheduleGroupDissolution, cancelGroupDissolution, scheduleGroupClosingWarning, cancelGroupClosingWarning } from '../queues/queue.js';
+import{ notificationService } from '../services/notificationService.js';
 
 const createLog = async ({
     eventId,
@@ -211,6 +212,13 @@ const submitEvent = asyncHandler(async (req, res) => {
         toStatus: "pending_approval"
     });
 
+    notificationService.notifyEventSubmitted({
+        clubName: req.club.name,
+        eventTitle: event.title,
+        recipients: req.club.advisors.map(a => ({ id: a._id, model: "Faculty" })),
+        data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+    }).catch(err => console.error(`Failed to send event submission notification for event ${event._id}:`, err.message));
+
     return res.status(200).json(new ApiResponse(200, event, `Event ${isResubmission ? "resubmitted" : "submitted"} for approval`));
 })
 
@@ -367,6 +375,23 @@ const reviewEvent = asyncHandler(async (req, res) => {
             toStatus: "approved",
             metaData: { hasConflict: !!conflict, eventGroupId: group?._id || null }
         })
+        // notify president, vp - fire and forget
+        const leaderRecipients = [];
+        if(club.president){
+            leaderRecipients.push({ id: club.president, model: "Student" });
+        }
+        if(club.vicePresident){
+            leaderRecipients.push({ id: club.vicePresident, model: "Student" });
+        }
+
+        if(leaderRecipients.length){
+            notificationService.notifyEventApproved({
+                eventTitle: event.title,
+                clubName: req.club.name,
+                recipients: leaderRecipients,
+                data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+            }).catch(err => console.error(`Failed to send event approval notification for event ${event._id}:`, err.message));
+        }
 
         return res.status(200).json(new ApiResponse(200, { event, eventGroup: group ? { id: group._id, name: group.name, memberCount: group.members.length } : null }, conflict ? "Event approved with conflicts" : "Event approved successfully"));
     }
@@ -390,6 +415,25 @@ const reviewEvent = asyncHandler(async (req, res) => {
             toStatus: "rejected",
             reason: rejectionReason.trim()
         });
+
+        const clubForReject = await Club.findById(req.club._id).select("president vicePresident");
+        const rejectRecipients = [];
+        if(clubForReject?.president){
+            rejectRecipients.push({ id: clubForReject.president, model: "Student" });
+        }
+        if(clubForReject?.vicePresident){
+            rejectRecipients.push({ id: clubForReject.vicePresident, model: "Student" });
+        }
+
+        if(rejectRecipients.length){
+            notificationService.notifyEventRejected({
+                eventTitle: event.title,
+                clubName: req.club.name,
+                reason: rejectionReason.trim(),
+                recipients: rejectRecipients,
+                data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+            }).catch(err => console.error(`Failed to send event rejection notification for event ${event._id}:`, err.message));
+        }
 
         return res.status(200).json(new ApiResponse(200, event, "Event rejected successfully. President can edit the event details and resubmit for approval."));
 
@@ -446,6 +490,20 @@ const cancelEvent = asyncHandler(async (req, res) => {
         toStatus: "cancelled",
         reason: cancellationReason.trim()
     })
+
+    const registrations = await Registration.find({
+        event: eventId,
+        status: "registered"
+    }).select("student").lean();
+
+    if(registrations.length){
+        notificationService.notifyEventCancelled({
+            eventTitle: event.title,
+            reason: cancellationReason.trim(),
+            recipients: registrations.map(r => ({ id: r.student, model: "Student" })),
+            data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+        }).catch(err => console.error(`Failed to send event cancellation notification for event ${event._id}:`, err.message));
+    }
 
     return res.status(200).json(new ApiResponse(200, event, "Event cancelled successfully"));
 })
@@ -750,6 +808,21 @@ export const initEventCron = () => {
                     fromStatus: "approved",
                     toStatus: "live",
                 })
+
+                // notify all registered students about event going live - fire and forget
+                Registration.find({ event: event._id, status: "registered" })
+                    .select("student").lean()
+                    .then(registrations => {
+                        if(!registrations.length){
+                            return;
+                        }
+                        return notificationService.notifyEventLive({
+                            eventTitle: event.title,
+                            recipients: registrations.map(r => ({ id: r.student, model: "Student" })),
+                            data: { eventId: event._id.toString(), clubId: event.club.toString() }
+                        })
+                    })
+                    .catch(err => console.error(`Failed to send event live notification for event ${event._id}:`, err.message));
             }
         }
         catch(err){
