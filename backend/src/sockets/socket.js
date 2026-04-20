@@ -80,6 +80,8 @@ export const initSocketServer = (httpServer) => {
     _io.on("connection", (socket) => {
         console.log(`User connected: ${socket.user.name} (${socket.user.role}) - Socket ID: ${socket.id}`);
 
+        socket.join(`user:${socket.user._id}`);
+
         registerChatHandlers(_io, socket);
 
         socket.on("disconnect", (reason) => {
