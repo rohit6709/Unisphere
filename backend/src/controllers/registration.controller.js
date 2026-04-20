@@ -7,7 +7,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitSystemMessage } from '../sockets/chat.socket.js';
-
+import { notificationService } from '../services/notificationService.js';
 
 const validateObjectId = (id, label = "ID") => {
     if(!mongoose.Types.ObjectId.isValid(id)){
@@ -106,6 +106,12 @@ const registerForEvent = asyncHandler(async (req, res) => {
     }
 
     const spotsRemaining = event.maxParticipants - (activeCount + 1);
+
+    notificationService.notifyRegistrationConfirmed({
+        eventTitle: event.title,
+        recipients: [{ id: req.user._id, model: "Student" }],
+        data: { eventId: eventId.toString(), clubId: event.club._id.toString() }
+    }).catch(err => console.error("Failed to send registration confirmation notification", err));
 
     return res.status(201)
         .json(new ApiResponse(201, { registrationId: registration._id, eventId, spotsRemaining: Math.max(0, spotsRemaining), groupJoined: !!group }, "Successfully registered for event"));
