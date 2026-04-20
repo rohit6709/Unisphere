@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { INTEREST_CATEGORIES } from '../constants/interests';
 
 const studentSchema = new mongoose.Schema({
    name: {
@@ -66,6 +67,22 @@ const studentSchema = new mongoose.Schema({
     refreshToken: {
         type: String,
         default: undefined
+    },
+    interests: {
+        predefined: [{
+            type: String,
+            enum: INTEREST_CATEGORIES
+        }],
+        custom: [{
+            type: String,
+            trim: true,
+            maxlength: 30,
+            lowercase: true
+        }]
+    },
+    isOnboarded: {
+        type: Boolean,
+        default: false
     }
 },{timestamps: true});
 
@@ -103,5 +120,7 @@ studentSchema.methods.generateRefreshToken = function(){
         }
     )
 }
+
+studentSchema.index({ "interests.predefined": 1 });
 
 export const Student = mongoose.model('Student',studentSchema);
