@@ -8,6 +8,7 @@ import app, { initEventCron } from './app.js';
 import { initDissolveWorker } from './queues/workers/dissolve.worker.js';
 import { initSocketServer } from './sockets/socket.js';
 import { initChatNotifyWorker } from './queues/workers/chatNotify.worker.js';
+import { initFirebaseAdmin } from './config/firebase.js';
 
 const httpServer = http.createServer(app);
 
@@ -17,6 +18,8 @@ const startServer = async () => {
         await connectDB();
         console.log("Database connected");
 
+        await initFirebaseAdmin();
+        
         initSocketServer(httpServer);
 
         initDissolveWorker();
