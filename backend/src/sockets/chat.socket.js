@@ -49,7 +49,8 @@ export const registerChatHandlers = (io, socket) => {
             const {
                 roomType, roomId,
                 type = "text",
-                content, fileUrl, fileName, fileType, fileSize
+                content, fileUrl, fileName, fileType, fileSize,
+                tempId // Client-side temporary ID for optimistic UI
             } = payload;
 
             if(!roomType || !roomId){
@@ -87,8 +88,12 @@ export const registerChatHandlers = (io, socket) => {
                 .populate("sender", "name rollNo employeeId");
 
             const roomKey = getRoomKey(roomType, roomId);
+            
+            // Format and attach tempId for the sender to handle optimistic replacement
+            const finalMessage = formatMessage(populated);
+            if (tempId) finalMessage.tempId = tempId;
 
-            io.to(roomKey).emit("new_message", formatMessage(populated));
+            io.to(roomKey).emit("new_message", finalMessage);
         } catch (error) {
             console.error("Error in send_message:", error.message);
             socket.emit("chat_error", { event: "send_message", message: error.message });
