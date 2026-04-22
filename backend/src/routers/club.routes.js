@@ -15,6 +15,7 @@ import {
     getClub,
     getPendingClubs,
     getMyClubs,
+    getMyAdvisedClubs,
     getClubMembers,
     toggleClubStatus
 } from '../controllers/club.controller.js';
@@ -24,8 +25,8 @@ import { verifyRole } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// Admin only
-router.route('/get-all-clubs').get(verifyJWT, verifyRole('admin', 'superadmin'), getAllClubs);
+// Admin, Faculty, Student
+router.route('/get-all-clubs').get(verifyJWT, getAllClubs);
 router.route('/admin/pending-clubs').get(verifyJWT, verifyRole('admin', 'superadmin'), getPendingClubs);
 router.route('/create-club').post(verifyJWT, verifyRole('admin', 'superadmin'), createClub);
 router.route('/admin/:clubId/review-request').patch(verifyJWT, verifyRole('admin', 'superadmin'), reviewClubRequest);
@@ -37,7 +38,7 @@ router.route('/admin/:clubId/remove-advisor').delete(verifyJWT, verifyRole('admi
 router.route('/update-club/:clubId').patch(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod'), updateClub);
 router.route('/:clubId/assign-president').patch(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod'), assignPresident);
 router.route('/:clubId/assign-vice-president').patch(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod'), assignVicePresident);
-router.route('/:clubId/members').get(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod'), getClubMembers);
+router.route('/:clubId/members').get(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), getClubMembers);
 
 // Faculty + president + admin
 router.route('/:clubId/remove-member').delete(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), removeMember);
@@ -45,6 +46,7 @@ router.route('/:clubId/remove-member').delete(verifyJWT, verifyRole('admin', 'su
 //Student
 router.route('/request-club').post(verifyJWT, verifyRole('student'), requestClub);
 router.route('/my-clubs').get(verifyJWT, verifyRole('student'), getMyClubs);
+router.route('/my-advised-clubs').get(verifyJWT, verifyRole('faculty', 'hod'), getMyAdvisedClubs);
 router.route('/join-club/:clubId').post(verifyJWT, verifyRole('student'), joinClub);
 router.route('/leave-club/:clubId').post(verifyJWT, verifyRole('student'), leaveClub);
 
