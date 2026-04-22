@@ -1,16 +1,23 @@
+import "dotenv/config";
 import { Queue, QueueEvents } from "bullmq";
 import Redis from "ioredis";
 
-export const redisConnection = new Redis({
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: Number(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
+const redisConnectionOptions = {
     maxRetriesPerRequest: null,
     retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
     }
-});
+};
+
+export const redisConnection = process.env.REDIS_URL
+    ? new Redis(process.env.REDIS_URL, redisConnectionOptions)
+    : new Redis({
+        host: process.env.REDIS_HOST || "127.0.0.1",
+        port: Number(process.env.REDIS_PORT) || 6379,
+        password: process.env.REDIS_PASSWORD || undefined,
+        ...redisConnectionOptions
+    });
 
 redisConnection.on("connect", () => {
     console.log("Redis connected");
