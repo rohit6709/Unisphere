@@ -471,14 +471,20 @@ const removeMember = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Member removed from club successfully"));
 })
 
-//Admin: list all clubs
+//Admin, Faculty, Student: list all clubs
 const getAllClubs = asyncHandler(async (req, res)=> {
     const { page = 1, limit = 10, status, department, search } = req.query;
 
     const filter = {};
-    if(status){
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+
+    // Enforce active status for non-admins
+    if(!isAdmin) {
+        filter.status = 'active';
+    } else if(status) {
         filter.status = status;
     }
+
     if(department){
         filter.department = department;
     }
@@ -558,7 +564,18 @@ const getMyClubs = asyncHandler(async (req, res)=> {
     .populate('advisors', 'name email employeeId department');
 
     return res.status(200)
-    .json(new ApiResponse(200, clubs, "Your clubs retrieved successfully"));
+    .json(new ApiResponse(200, { clubs }, "Your clubs retrieved successfully"));
+});
+
+//Faculty advisor: get their own clubs 
+const getMyAdvisedClubs = asyncHandler(async (req, res)=> {
+    const clubs = await Club.find({ advisors: req.user._id })
+    .populate('president', 'name email rollNo')
+    .populate('vicePresident', 'name email rollNo')
+    .populate('advisors', 'name email employeeId department');
+
+    return res.status(200)
+    .json(new ApiResponse(200, { clubs }, "Your advised clubs retrieved successfully"));
 });
 
 //Faculty advisor / Admin: get members
@@ -643,6 +660,7 @@ export {
     getClub,
     getPendingClubs,
     getMyClubs,
+    getMyAdvisedClubs,
     getClubMembers,
     toggleClubStatus
 }
