@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { INTEREST_CATEGORIES } from '../constants/interests';
+import { INTEREST_CATEGORIES } from '../constants/interests.js';
 
 const studentSchema = new mongoose.Schema({
    name: {
