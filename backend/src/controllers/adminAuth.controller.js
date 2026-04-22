@@ -300,6 +300,78 @@ const toggleAdminStatus = asyncHandler( async (req, res)=> {
     return res.status(200).json(new ApiResponse(200, { isActive: admin.isActive }, `Admin ${admin.isActive ? "activated" : "deactivated"} successfully`));
 })
 
+const getPlatformStats = asyncHandler( async (req, res)=> {
+    const { Student } = await import("../models/student.model.js");
+    const { Faculty } = await import("../models/faculty.model.js");
+    const { Club } = await import("../models/club.model.js");
+    const { Event } = await import("../models/event.model.js");
+    const { Registration } = await import("../models/registration.model.js");
 
+    // 1. Core Counts
+    const [
+        studentCount,
+        facultyCount,
+        clubCount,
+        eventCount,
+        registrationCount,
+        activeAdminCount
+    ] = await Promise.all([
+        Student.countDocuments(),
+        Faculty.countDocuments(),
+        Club.countDocuments({ status: "active" }),
+        Event.countDocuments({ status: "approved" }),
+        Registration.countDocuments({ status: "registered" }),
+        Admin.countDocuments({ isActive: true })
+    ]);
 
-export { loginAdmin, logoutAdmin, refreshAccessToken, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, createAdmin, getAllAdmins, toggleAdminStatus };
+    // 2. Growth Over Time (Last 6 Months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const growthStats = await Registration.aggregate([
+        {
+            $match: {
+                createdAt: { $gte: sixMonthsAgo },
+                status: "registered"
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    month: { $month: "$createdAt" },
+                    year: { $year: "$createdAt" }
+                },
+                count: { $sum: 1 }
+            }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    // 3. Department Distribution
+    const departmentStats = await Student.aggregate([
+        { $group: { _id: "$department", count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+    ]);
+
+    const stats = {
+        users: {
+            students: studentCount,
+            faculty: facultyCount,
+            admins: activeAdminCount,
+            departments: departmentStats
+        },
+        platform: {
+            clubs: clubCount,
+            events: eventCount,
+            registrations: registrationCount,
+            growth: growthStats.map(s => ({
+                month: new Intl.DateTimeFormat('en', { month: 'short' }).format(new Date(s._id.year, s._id.month - 1)),
+                count: s.count
+            }))
+        }
+    };
+
+    return res.status(200).json(new ApiResponse(200, stats, "Platform stats fetched successfully"));
+})
+
+export { loginAdmin, logoutAdmin, refreshAccessToken, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, createAdmin, getAllAdmins, toggleAdminStatus, getPlatformStats };
