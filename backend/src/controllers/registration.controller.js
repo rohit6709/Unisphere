@@ -154,7 +154,6 @@ const unregisterFromEvent = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "Successfully unregistered from event"));
 })
 
-//Admin/ advisor : get all registrations for an event
 const getEventRegistrations = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
@@ -301,9 +300,132 @@ const getMyRegistrations = asyncHandler(async (req, res) => {
             }, "Your registrations retrieved successfully"));
 })
 
+const getAllRegistrations = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, status, search } = req.query;
+    const filter = {};
+    if(status) filter.status = status;
+
+    const skip = Number((page) - 1) * Number(limit);
+
+    let registrations, total;
+    if(search){
+        const pipeline = [
+            { $match: filter },
+            {
+                $lookup: {
+                    from: "students",
+                    localField: "student",
+                    foreignField: "_id",
+                    as: "studentData"
+                }
+            },
+            { $unwind: "$studentData" },
+            {
+                $match: {
+                    $or: [
+                        { "studentData.name": { $regex: search, $options: "i" } },
+                        { "studentData.rollNo": { $regex: search, $options: "i" } }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "events",
+                    localField: "event",
+                    foreignField: "_id",
+                    as: "eventData"
+                }
+            },
+            { $unwind: "$eventData" },
+            {
+                $project: {
+                    status: 1, registeredAt: 1,
+                    student: {
+                        name: "$studentData.name",
+                        rollNo: "$studentData.rollNo",
+                        email: "$studentData.email"
+                    },
+                    event: {
+                        title: "$eventData.title",
+                        startsAt: "$eventData.startsAt"
+                    }
+                }
+            },
+            { $sort: { registeredAt: -1 } },
+            { $skip: skip },
+            { $limit: Number(limit) }
+        ];
+
+        const [results, countResult] = await Promise.all([
+            Registration.aggregate(pipeline),
+            Registration.aggregate([...pipeline.slice(0, 4), { $count: "total" }])
+        ]);
+
+        registrations = results;
+        total = countResult[0]?.total || 0;
+    } else {
+        [registrations, total] = await Promise.all([
+            Registration.find(filter)
+                .populate("student", "name rollNo email")
+                .populate("event", "title startsAt")
+                .sort({ registeredAt: -1 })
+                .skip(skip)
+                .limit(Number(limit)),
+            Registration.countDocuments(filter)
+        ]);
+    }
+
+    return res.status(200).json(new ApiResponse(200, {
+        registrations,
+        pagination: { total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) }
+    }, "Global registrations retrieved successfully"));
+});
+
+const exportRegistrations = asyncHandler(async (req, res) => {
+    const { eventId } = req.params;
+    validateObjectId(eventId, "event ID");
+
+    const event = await Event.findById(eventId).populate("club", "advisors name");
+    if(!event){
+        throw new ApiError(404, "Event not found");
+    }
+
+    const isAdmin = ["admin", "superadmin"].includes(req.user.role);
+    if(!isAdmin){
+        const isAdvisor = event.club.advisors.some(a => a.toString() === req.user._id.toString());
+        if(!isAdvisor){
+            throw new ApiError(403, "You do not have permission to export these registrations");
+        }
+    }
+
+    const registrations = await Registration.find({ event: eventId, status: "registered" })
+        .populate("student", "name rollNo email department")
+        .sort({ registeredAt: 1 });
+
+    const csvData = registrations.map(reg => ({
+        "Student Name": reg.student.name,
+        "Roll Number": reg.student.rollNo,
+        "Email": reg.student.email,
+        "Department": reg.student.department,
+        "Registration Date": new Date(reg.registeredAt).toLocaleDateString()
+    }));
+
+    const { Parser } = await import('json2csv');
+    const parser = new Parser();
+    const csv = parser.parse(csvData);
+
+    const filename = `${event.title.replace(/\s+/g, '_')}_Attendees.csv`;
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment(filename);
+    return res.send(csv);
+})
+
 export {
     registerForEvent,
     unregisterFromEvent,
     getEventRegistrations,
-    getMyRegistrations
+    getMyRegistrations,
+    getAllRegistrations,
+    exportRegistrations
 }
