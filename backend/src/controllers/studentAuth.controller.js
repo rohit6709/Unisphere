@@ -276,4 +276,20 @@ const getAllStudents = asyncHandler(async (req, res) => {
     );
 });
 
-export { loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, forgotPassword, resetPassword, getProfile, getAllStudents };
+const toggleStudentStatus = asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    student.isActive = !student.isActive;
+    await student.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { isActive: student.isActive }, `Student ${student.isActive ? "activated" : "deactivated"} successfully`));
+});
+
+export { loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, forgotPassword, resetPassword, getProfile, getAllStudents, toggleStudentStatus };
