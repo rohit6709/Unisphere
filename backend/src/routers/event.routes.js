@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { createEvent, submitEvent, updateEvent, reviewEvent, cancelEvent, getClubEvents, getPendingEvents, getEvent, getEventLogs, getAllEvents, getPublicEvents, getMySubmittedEvents, toggleFeatured, deleteEvent } from "../controllers/event.controller.js";
-import { verifyJWT } from "../middleware/auth.middleware.js";
-import { verifyRole } from "../middleware/role.middleware.js";
-import { verifyClubAccess, requireClubRole } from "../middleware/clubAccess.middleware.js";
+import { createEvent, submitEvent, updateEvent, reviewEvent, cancelEvent, getClubEvents, getPendingEvents, getEvent, getEventLogs, getAllEvents, getPublicEvents, getPublicEvent, getMySubmittedEvents, getAdviseePendingEvents, toggleFeatured, deleteEvent, getGlobalPendingRequests } from "../controllers/event.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyRole } from "../middlewares/role.middleware.js";
+import { verifyClubAccess, requireClubRole } from "../middlewares/verifyClubAccess.middleware.js";
+import { simpleCache } from "../middlewares/cache.middleware.js";
 import eventGroupRouter from "./eventGroup.routes.js";
 
 
@@ -29,9 +30,12 @@ clubEventRouter.route("/:eventId").get(getEvent);
 const eventRouter = Router();
 
 eventRouter.route("/all-events").get(verifyJWT, verifyRole("admin", "superadmin"), getAllEvents);
+eventRouter.route("/pending-requests").get(verifyJWT, verifyRole("admin", "superadmin", "faculty", "hod"), getGlobalPendingRequests);
 eventRouter.route("/my-submitted").get(verifyJWT, verifyRole("club_president", "club_vice_president", "admin", "superadmin"), getMySubmittedEvents);
+eventRouter.route("/advisee-pending").get(verifyJWT, verifyRole("faculty", "hod", "admin", "superadmin"), getAdviseePendingEvents);
 
-eventRouter.route("/public").get(verifyJWT, getPublicEvents);
+eventRouter.route("/public").get(verifyJWT, simpleCache(120), getPublicEvents);
+eventRouter.route("/public/:eventId").get(verifyJWT, simpleCache(300), getPublicEvent);
 
 eventRouter.route("/:eventId/toggle-featured").patch(verifyJWT, verifyRole("admin", "superadmin"), toggleFeatured);
 
