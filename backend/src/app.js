@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
 import studentRouter from './routers/studentAuth.routes.js';
 import facultyRouter from './routers/facultyAuth.routes.js';
 import adminRouter from './routers/adminAuth.routes.js';
@@ -14,18 +17,35 @@ import dashboardRouter from './routers/dashboard.routes.js';
 import clubProfileRouter from './routers/clubProfile.routes.js';
 import clubTagsRouter from './routers/clubTags.routes.js';
 import noticeRouter from './routers/notice.routes.js';
+import auditRouter from './routers/audit.routes.js';
+import uploadRouter from './routers/upload.routes.js';
+import feedbackRouter from './routers/feedback.routes.js';
 import { initEventCron } from './controllers/event.controller.js';
 
 const app = express();
 
+// Security: Helmet for HTTP Headers
+app.use(helmet());
+
+// Security: Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: {
+        success: false,
+        message: "Too many requests from this IP, please try again after 15 minutes"
+    }
+});
+app.use('/api/', limiter);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' })); // Body limiting
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
@@ -37,7 +57,6 @@ app.use('/api/v1/admin', adminRouter);
 // -- student
 app.use('/api/v1/students', onboardingRouter);
 app.use('/api/v1/students', dashboardRouter);
-// 
 
 //Club routes
 app.use('/api/v1/clubs', clubRouter);
@@ -60,6 +79,11 @@ app.use('/api/v1/chat', chatRouter);
 app.use('/api/v1/notifications', notificationRouter);
 
 app.use('/api/v1/notices', noticeRouter);
+app.use('/api/v1/uploads', uploadRouter);
+app.use('/api/v1/feedback', feedbackRouter);
+
+// Audit routes
+app.use('/api/v1/audit', auditRouter);
 
 app.get('/api/v1', (req, res) => {
     res.send('Welcome to Unisphere API');
