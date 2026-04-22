@@ -4,7 +4,7 @@ import { Event } from '../models/event.model.js';
 import { Club } from '../models/club.model.js';
 import { Registration } from '../models/registration.model.js';
 import { EventGroup } from '../models/eventGroup.model.js';
-import { ApprovalLog } from '../models/approvallog.model.js';
+import { ApprovalLog } from '../models/approvalLog.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -306,15 +306,26 @@ const reviewEvent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Action must be either approve or reject");
     }
 
-    const event = await Event.findOne({ _id: eventId, club: req.club._id });
+    // Find event and its club for verification
+    const event = await Event.findById(eventId).populate("club");
     if(!event){
-        throw new ApiError(404, "Event not found in this club");
+        throw new ApiError(404, "Event not found");
     }
+
+    // Role-based authorization
+    const isAdmin = ["admin", "superadmin"].includes(req.user.role);
+    const isAdvisor = event.club.advisors.map(id => id.toString()).includes(req.user._id.toString());
+
+    if(!isAdmin && !isAdvisor){
+        throw new ApiError(403, "You do not have permission to review this event");
+    }
+
     if(event.status !== "pending_approval"){
         throw new ApiError(400, `Event cannot be reviewed from ${event.status} status`);
     }
     const  fromStatus = event.status;
     const performerModel = resolvePerformerModel(req.user.role);
+
     if(action === "approve"){
         const conflict = await detectConflicts(event, event._id);
         if(conflict){
@@ -325,7 +336,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
 
                 await createLog({
                     eventId: event._id,
-                    clubId: req.club._id,
+                    clubId: event.club._id,
                     action: "conflict_flagged",
                     performedBy: req.user._id,
                     performedByModel: performerModel,
@@ -338,7 +349,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
         event.rejectionReason = null;
         await event.save();
 
-        const club = await Club.findById(req.club._id).select("president vicePresident advisors");
+        const club = await Club.findById(event.club._id).select("president vicePresident advisors");
 
         const group = await createEventGroup(event, club);
 
@@ -347,7 +358,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
                 const jobId = await scheduleGroupDissolution({
                     eventGroupId: group._id.toString(),
                     eventId: event._id.toString(),
-                    clubId: req.club._id.toString(),
+                    clubId: event.club._id.toString(),
                     endsAt: event.endsAt
                 })
 
@@ -367,7 +378,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
 
         await createLog({
             eventId: event._id,
-            clubId: req.club._id,
+            clubId: event.club._id,
             action: "approved",
             performedBy: req.user._id,
             performedByModel: performerModel,
@@ -387,9 +398,9 @@ const reviewEvent = asyncHandler(async (req, res) => {
         if(leaderRecipients.length){
             notificationService.notifyEventApproved({
                 eventTitle: event.title,
-                clubName: req.club.name,
+                clubName: event.club.name,
                 recipients: leaderRecipients,
-                data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+                data: { eventId: event._id.toString(), clubId: event.club._id.toString() }
             }).catch(err => console.error(`Failed to send event approval notification for event ${event._id}:`, err.message));
         }
 
@@ -407,7 +418,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
 
         await createLog({
             eventId: event._id,
-            clubId: req.club._id,
+            clubId: event.club._id,
             action: "rejected",
             performedBy: req.user._id,
             performedByModel: performerModel,
@@ -416,7 +427,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
             reason: rejectionReason.trim()
         });
 
-        const clubForReject = await Club.findById(req.club._id).select("president vicePresident");
+        const clubForReject = await Club.findById(event.club._id).select("president vicePresident");
         const rejectRecipients = [];
         if(clubForReject?.president){
             rejectRecipients.push({ id: clubForReject.president, model: "Student" });
@@ -428,10 +439,10 @@ const reviewEvent = asyncHandler(async (req, res) => {
         if(rejectRecipients.length){
             notificationService.notifyEventRejected({
                 eventTitle: event.title,
-                clubName: req.club.name,
+                clubName: event.club.name,
                 reason: rejectionReason.trim(),
                 recipients: rejectRecipients,
-                data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+                data: { eventId: event._id.toString(), clubId: event.club._id.toString() }
             }).catch(err => console.error(`Failed to send event rejection notification for event ${event._id}:`, err.message));
         }
 
@@ -450,9 +461,9 @@ const cancelEvent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Cancellation reason is required when cancelling an event");
     }
 
-    const event = await Event.findOne({ _id: eventId, club: req.club._id });
+    const event = await Event.findById(eventId);
     if(!event){
-        throw new ApiError(404, "Event not found in this club");
+        throw new ApiError(404, "Event not found");
     }
 
     if(["completed", "archived", "cancelled"].includes(event.status)){
@@ -482,7 +493,7 @@ const cancelEvent = asyncHandler(async (req, res) => {
 
     await createLog({
         eventId: event._id,
-        clubId: req.club._id,
+        clubId: event.club,
         action: "cancelled",
         performedBy: req.user._id,
         performedByModel: performerModel,
@@ -501,7 +512,7 @@ const cancelEvent = asyncHandler(async (req, res) => {
             eventTitle: event.title,
             reason: cancellationReason.trim(),
             recipients: registrations.map(r => ({ id: r.student, model: "Student" })),
-            data: { eventId: event._id.toString(), clubId: req.club._id.toString() }
+            data: { eventId: event._id.toString(), clubId: event.club.toString() }
         }).catch(err => console.error(`Failed to send event cancellation notification for event ${event._id}:`, err.message));
     }
 
@@ -558,11 +569,19 @@ const getClubEvents = asyncHandler(async (req, res) => {
 const getPendingEvents = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
-    const filter = { club: req.club._id, status: "pending_approval" };
+    const filter = { status: "pending_approval" };
+    
+    // Non-admins only see their advised club events
+    if(!["admin", "superadmin"].includes(req.user.role)){
+         const advisedClubs = await Club.find({ advisors: req.user._id }).select("_id");
+         filter.club = { $in: advisedClubs.map(c => c._id) };
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const [events, total] = await Promise.all([
         Event.find(filter)
+            .populate("club", "name department")
             .populate("submittedBy", "name rollNo")
             .sort({ createdAt: 1 })
             .skip(skip)
@@ -579,20 +598,55 @@ const getPendingEvents = asyncHandler(async (req, res) => {
         }}, "Pending events retrieved successfully"));   
 })
 
+//Faculty advisor : get pending events for clubs they advise
+const getAdviseePendingEvents = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+    
+    // Find clubs where this faculty is an advisor
+    const advisedClubs = await Club.find({ advisors: req.user._id }).select("_id");
+    const clubIds = advisedClubs.map(c => c._id);
+
+    const filter = { club: { $in: clubIds }, status: "pending_approval" };
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [events, total] = await Promise.all([
+        Event.find(filter)
+            .populate("club", "name department")
+            .populate("submittedBy", "name rollNo")
+            .sort({ createdAt: 1 })
+            .skip(skip)
+            .limit(Number(limit)),
+        Event.countDocuments(filter)
+    ])
+
+    return res.status(200)
+        .json(new ApiResponse(200, {events, pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / Number(limit))
+        }}, "Advisee pending events retrieved successfully"));   
+})
+
 //All club roles : single event details
 const getEvent = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
 
-    const event = await Event.findOne({ _id: eventId, club: req.club._id })
+    const event = await Event.findById(eventId)
         .populate("submittedBy", "name rollNo employeeId")
-        .populate("reviewedBy", "name employeeId");
+        .populate("reviewedBy", "name employeeId")
+        .populate("club", "name advisors");
 
         if(!event){
-            throw new ApiError(404, "Event not found in this club");
+            throw new ApiError(404, "Event not found");
         }
-        if(event.status === "draft" && req.clubRole === "member"){
-            throw new ApiError(403, "Members cannot view draft events");
+        
+        // Draft check
+        if(event.status === "draft"){
+            const isAuthorized = ["admin", "superadmin"].includes(req.user.role) || 
+                                event.submittedBy.toString() === req.user._id.toString();
+            if(!isAuthorized) throw new ApiError(403, "Members cannot view draft events");
         }
 
         return res.status(200)
@@ -603,11 +657,6 @@ const getEvent = asyncHandler(async (req, res) => {
 const getEventLogs = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
-
-    const event = await Event.findOne({ _id: eventId, club: req.club._id });
-    if(!event){
-        throw new ApiError(404, "Event not found in this club");
-    }
 
     const logs = await ApprovalLog.find({ event: eventId })
         .populate("performedBy", "name employeeId rollNo")
@@ -740,6 +789,30 @@ const getMySubmittedEvents = asyncHandler(async (req, res) => {
 })
 
 
+const getPublicEvent = asyncHandler(async (req, res) => {
+    const { eventId } = req.params;
+    validateObjectId(eventId, "event ID");
+
+    const event = await Event.findOne({
+        _id: eventId,
+        status: { $in: ["approved", "live"] }
+    }).populate("club", "name department tags members");
+
+    if(!event){
+        throw new ApiError(404, "Event not found");
+    }
+
+    // Check visibility
+    if (event.visibility === "club_only") {
+        const isMember = event.club.members?.map(id => id.toString()).includes(req.user._id.toString());
+        if (!isMember) {
+            throw new ApiError(403, "This event is exclusive to club members");
+        }
+    }
+
+    return res.status(200).json(new ApiResponse(200, event, "Event retrieved successfully"));
+});
+
 const toggleFeatured = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
@@ -788,7 +861,16 @@ const deleteEvent = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "Event deleted successfully"));
 })
 
-export const initEventCron = () => {
+const getGlobalPendingRequests = asyncHandler(async (req, res) => {
+    const [clubs, events] = await Promise.all([
+        Club.find({ status: "pending" }).populate("requestedBy", "name rollNo"),
+        Event.find({ status: "pending_approval" }).populate("club", "name").populate("submittedBy", "name rollNo")
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, { clubs, events }, "Pending requests retrieved successfully"));
+});
+
+const initEventCron = () => {
     // Approved - Live every minute
     cron.schedule("* * * * *", async () => {
         try{
@@ -893,7 +975,11 @@ export {
     getEventLogs,
     getAllEvents,
     getPublicEvents,
+    getPublicEvent,
     getMySubmittedEvents,
+    getAdviseePendingEvents,
     toggleFeatured,
-    deleteEvent
+    deleteEvent,
+    getGlobalPendingRequests,
+    initEventCron
 }
