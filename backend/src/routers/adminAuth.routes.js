@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginAdmin, logoutAdmin, createAdmin, getAllAdmins, toggleAdminStatus, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, refreshAccessToken } from '../controllers/adminAuth.controller.js';
+import { loginAdmin, logoutAdmin, createAdmin, getAllAdmins, toggleAdminStatus, changeAdminPassword, forgotAdminPassword, resetAdminPassword, getProfile, refreshAccessToken, getPlatformStats } from '../controllers/adminAuth.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { verifyRole } from '../middlewares/role.middleware.js';
 
@@ -18,5 +18,6 @@ router.route("/profile").get(verifyJWT, getProfile);
 router.route("/create-admin").post(verifyJWT, verifyRole("superadmin"), createAdmin);
 router.route("/get-all-admins").get(verifyJWT, verifyRole("superadmin"), getAllAdmins);
 router.route("/:adminId/toggle-status").patch(verifyJWT, verifyRole("superadmin"), toggleAdminStatus);
+router.route("/stats").get(verifyJWT, verifyRole("superadmin"), getPlatformStats);
 
 export default router;
