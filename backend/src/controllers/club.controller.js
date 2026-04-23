@@ -6,6 +6,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { notificationService } from '../services/notificationService.js';
 import { model } from 'mongoose';
+import { INTEREST_CATEGORIES, CUSTOM_TAG_MAX_LENGTH, CUSTOM_TAG_MAX_COUNT } from '../constants/interests.js';
 
 const resolveFaculty = async (employeeId) => {
     if(!employeeId){
@@ -39,10 +40,42 @@ const verifyClubAdvisor = (club, userId) => {
     }
 }
 
+const sanitizeCustomTag = (tag) => {
+    if (typeof tag !== 'string') {
+        return null;
+    }
+
+    const cleaned = tag
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9_\s]/g, '')
+        .replace(/\s+/g, '_')
+        .slice(0, CUSTOM_TAG_MAX_LENGTH);
+
+    return cleaned.length > 0 ? cleaned : null;
+};
+
+const normalizeClubTags = (tags) => {
+    const predefined = Array.isArray(tags?.predefined)
+        ? tags.predefined.filter((tag) => INTEREST_CATEGORIES.includes(tag))
+        : [];
+
+    const custom = Array.isArray(tags?.custom)
+        ? tags.custom
+            .map(sanitizeCustomTag)
+            .filter(Boolean)
+            .filter((value, index, array) => array.indexOf(value) === index)
+            .slice(0, CUSTOM_TAG_MAX_COUNT)
+        : [];
+
+    return { predefined, custom };
+};
+
 // Admin creates club directly with an advisor
 
 const createClub = asyncHandler(async (req, res) => {
-    const { name, description, department, advisorEmployeeId } = req.body;
+    const { name, description, department, advisorEmployeeId, logoUrl, bannerUrl } = req.body;
+    const tags = normalizeClubTags(req.body.tags);
     if(!name){
         throw new ApiError(400, "Club name is required");
     }
@@ -60,10 +93,13 @@ const createClub = asyncHandler(async (req, res) => {
         name: name.trim(),
         description: description ? description.trim() : null,
         department: department ? department.trim() : null,
+        logoUrl: logoUrl ? logoUrl.trim() : null,
+        bannerUrl: bannerUrl ? bannerUrl.trim() : null,
         advisors: [advisor._id],
         status: "active",
         approvedBy: req.user._id,
         approvedAt: new Date(),
+        tags,
     });
     await newClub.save();
 
@@ -73,7 +109,8 @@ const createClub = asyncHandler(async (req, res) => {
 
 //Student: request a new club
 const requestClub = asyncHandler(async (req, res) => {
-    const { name, description, department } = req.body;
+    const { name, description, department, logoUrl, bannerUrl } = req.body;
+    const tags = normalizeClubTags(req.body.tags);
     if(!name){
         throw new ApiError(400, "Club name is required");
     }
@@ -89,8 +126,11 @@ const requestClub = asyncHandler(async (req, res) => {
         name: name.trim(),
         description: description.trim(),
         department: department ? department.trim() : null,
+        logoUrl: logoUrl ? logoUrl.trim() : null,
+        bannerUrl: bannerUrl ? bannerUrl.trim() : null,
         status: "pending",
-        requestedBy: req.user._id
+        requestedBy: req.user._id,
+        tags,
     });
     await newClub.save();
 
@@ -101,7 +141,7 @@ const requestClub = asyncHandler(async (req, res) => {
 //Admin: update club details
 const updateClub = asyncHandler(async (req, res) => {
     const { clubId } = req.params;
-    const allowedFields = ['name', 'description', 'department'];
+    const allowedFields = ['name', 'description', 'department', 'logoUrl', 'bannerUrl'];
 
     const updates = {};
     for(const field of allowedFields){
@@ -138,6 +178,12 @@ const updateClub = asyncHandler(async (req, res) => {
     if(updates.department){
         updates.department = updates.department.trim();
     }
+    if(updates.logoUrl){
+        updates.logoUrl = updates.logoUrl.trim();
+    }
+    if(updates.bannerUrl){
+        updates.bannerUrl = updates.bannerUrl.trim();
+    }
 
     const updatedClub = await Club.findByIdAndUpdate(
         clubId,
@@ -154,7 +200,7 @@ const updateClub = asyncHandler(async (req, res) => {
 //Admin: review club requests (approve/reject)
 const reviewClubRequest = asyncHandler(async (req, res) => {
     const { clubId } = req.params;
-    const { action, rejectionReason } = req.body;
+    const { action, rejectionReason, advisorEmployeeId } = req.body;
 
     if(!action || !["approve", "reject"].includes(action)){
         throw new ApiError(400, "Action must be either 'approve' or 'reject'");
@@ -169,6 +215,14 @@ const reviewClubRequest = asyncHandler(async (req, res) => {
     }
 
     if(action === "approve"){
+        if (!club.advisors?.length) {
+            if (!advisorEmployeeId) {
+                throw new ApiError(400, "Advisor employee ID is required when approving a club request");
+            }
+
+            const advisor = await resolveFaculty(advisorEmployeeId);
+            club.advisors = [advisor._id];
+        }
         club.status = "active";
         club.approvedBy = req.user._id;
         club.approvedAt = new Date();
