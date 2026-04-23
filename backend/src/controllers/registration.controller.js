@@ -15,6 +15,8 @@ const validateObjectId = (id, label = "ID") => {
     }
 };
 
+const VALID_ADMIN_REGISTRATION_STATUSES = ["registered", "cancelled", "attended", "no_show"];
+
 const registerForEvent = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
@@ -301,9 +303,13 @@ const getMyRegistrations = asyncHandler(async (req, res) => {
 })
 
 const getAllRegistrations = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, status, search } = req.query;
+    const { page = 1, limit = 10, status, search, eventId } = req.query;
     const filter = {};
     if(status) filter.status = status;
+    if (eventId) {
+        validateObjectId(eventId, "event ID");
+        filter.event = new mongoose.Types.ObjectId(eventId);
+    }
 
     const skip = Number((page) - 1) * Number(limit);
 
@@ -346,6 +352,7 @@ const getAllRegistrations = asyncHandler(async (req, res) => {
                         email: "$studentData.email"
                     },
                     event: {
+                        _id: "$eventData._id",
                         title: "$eventData.title",
                         startsAt: "$eventData.startsAt"
                     }
@@ -379,6 +386,68 @@ const getAllRegistrations = asyncHandler(async (req, res) => {
         registrations,
         pagination: { total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) }
     }, "Global registrations retrieved successfully"));
+});
+
+const updateRegistrationStatus = asyncHandler(async (req, res) => {
+    const { eventId, registrationId } = req.params;
+    const { status } = req.body;
+
+    validateObjectId(eventId, "event ID");
+    validateObjectId(registrationId, "registration ID");
+
+    if (!VALID_ADMIN_REGISTRATION_STATUSES.includes(status)) {
+        throw new ApiError(400, "Invalid registration status");
+    }
+
+    const registration = await Registration.findOne({ _id: registrationId, event: eventId }).populate("student", "name rollNo");
+    if (!registration) {
+        throw new ApiError(404, "Registration not found for this event");
+    }
+
+    registration.status = status;
+    if (status === "cancelled") {
+        registration.cancelledAt = new Date();
+    } else {
+        registration.cancelledAt = null;
+    }
+    await registration.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, registration, `Registration status updated to ${status}`)
+    );
+});
+
+const bulkUpdateRegistrationStatus = asyncHandler(async (req, res) => {
+    const { eventId } = req.params;
+    const { registrationIds, status } = req.body;
+
+    validateObjectId(eventId, "event ID");
+
+    if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+        throw new ApiError(400, "registrationIds must be a non-empty array");
+    }
+    if (!VALID_ADMIN_REGISTRATION_STATUSES.includes(status)) {
+        throw new ApiError(400, "Invalid registration status");
+    }
+
+    const validRegistrationIds = registrationIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (!validRegistrationIds.length) {
+        throw new ApiError(400, "No valid registration IDs were provided");
+    }
+
+    const update = {
+        status,
+        cancelledAt: status === "cancelled" ? new Date() : null,
+    };
+
+    const result = await Registration.updateMany(
+        { _id: { $in: validRegistrationIds }, event: eventId },
+        { $set: update }
+    );
+
+    return res.status(200).json(
+        new ApiResponse(200, { matched: result.matchedCount, modified: result.modifiedCount }, `Updated ${result.modifiedCount} registrations`)
+    );
 });
 
 const exportRegistrations = asyncHandler(async (req, res) => {
@@ -427,5 +496,7 @@ export {
     getEventRegistrations,
     getMyRegistrations,
     getAllRegistrations,
-    exportRegistrations
+    exportRegistrations,
+    updateRegistrationStatus,
+    bulkUpdateRegistrationStatus
 }
