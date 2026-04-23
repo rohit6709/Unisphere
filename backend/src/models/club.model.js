@@ -18,6 +18,16 @@ const clubSchema = new mongoose.Schema({
         trim: true,
         default: null
     },
+    logoUrl: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    bannerUrl: {
+        type: String,
+        trim: true,
+        default: null
+    },
     president: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Student',
