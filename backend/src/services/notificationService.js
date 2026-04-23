@@ -14,6 +14,8 @@ const send = async ({
         return;
     }
 
+    const now = new Date();
+
     const docs = recipients.map(({ id, model }) =>({
         recipient: id,
         recipientModel: model,
@@ -32,8 +34,8 @@ const send = async ({
     console.log(`Saved ${saved.length} notifications for type ${type} with priority ${PRIORITY_LABEL[priority]}`);
 
     try{
-        const { getIo } = await import("../sockets/socket.js");
-        const io = getIo();
+        const { getIO } = await import("../sockets/socket.js");
+        const io = getIO();
 
         for(const notification of saved){
             io.to(`user:${notification.recipient.toString()}`).emit("notification", {
