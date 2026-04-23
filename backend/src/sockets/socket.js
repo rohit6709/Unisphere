@@ -2,9 +2,34 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Student } from '../models/student.model.js';
 import { Faculty } from '../models/faculty.model.js';
+import { Admin } from '../models/admin.model.js';
 import { registerChatHandlers } from './chat.socket.js';
 
 let _io = null;
+const connectedUsers = new Map();
+
+const markUserOnline = (userId) => {
+    const key = userId.toString();
+    const nextCount = (connectedUsers.get(key) || 0) + 1;
+    connectedUsers.set(key, nextCount);
+    return nextCount === 1;
+}
+
+const markUserOffline = (userId) => {
+    const key = userId.toString();
+    const currentCount = connectedUsers.get(key) || 0;
+
+    if(currentCount <= 1){
+        connectedUsers.delete(key);
+        return true;
+    }
+
+    connectedUsers.set(key, currentCount - 1);
+    return false;
+}
+
+const getOnlineUserIds = () => Array.from(connectedUsers.keys());
+
 export const getIO = () => {
     if(!_io){
         throw new Error("Socket.io not initialized - call initSocket first");
@@ -47,6 +72,7 @@ export const initSocketServer = (httpServer) => {
 
             const isStudentRole = ["student", "club_president", "club_vice_president"].includes(decoded.role);
             const isFacultyRole = ["faculty", "hod"].includes(decoded.role);
+            const isAdminRole = ["admin", "superadmin"].includes(decoded.role);
 
             if(isStudentRole){
                 user = await Student.findById(decoded._id).select("_id name role isActive");
@@ -55,6 +81,10 @@ export const initSocketServer = (httpServer) => {
             else if(isFacultyRole){
                 user = await Faculty.findById(decoded._id).select("_id name role isActive");
                 userModel = "Faculty";
+            }
+            else if(isAdminRole){
+                user = await Admin.findById(decoded._id).select("_id name role isActive");
+                userModel = "Admin";
             }
 
             if(!user){
@@ -81,10 +111,24 @@ export const initSocketServer = (httpServer) => {
         console.log(`User connected: ${socket.user.name} (${socket.user.role}) - Socket ID: ${socket.id}`);
 
         socket.join(`user:${socket.user._id}`);
+        socket.emit("presence_snapshot", { userIds: getOnlineUserIds() });
+
+        if(markUserOnline(socket.user._id)){
+            _io.emit("presence_changed", {
+                userId: socket.user._id.toString(),
+                isOnline: true
+            });
+        }
 
         registerChatHandlers(_io, socket);
 
         socket.on("disconnect", (reason) => {
+            if(markUserOffline(socket.user._id)){
+                _io.emit("presence_changed", {
+                    userId: socket.user._id.toString(),
+                    isOnline: false
+                });
+            }
             console.log(`User disconnected: ${socket.user.name} (${socket.user.role}) - Socket ID: ${socket.id} - Reason: ${reason}`);
         })
     })
