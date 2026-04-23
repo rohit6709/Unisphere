@@ -92,6 +92,7 @@ const createNotice = asyncHandler(async (req, res) => {
 const updateNotice = asyncHandler(async (req, res) => {
     const { noticeId } = req.params;
     const allowedFields = ["title", "content", "expiresAt", "priority", "isActive"];
+    const { forceExpire } = req.body;
  
     const notice = await Notice.findById(noticeId);
     if(!notice){
@@ -114,10 +115,17 @@ const updateNotice = asyncHandler(async (req, res) => {
     }
  
     if(!Object.keys(updates).length){
-        throw new ApiError(400, "No valid fields provided to update");
+        if(!forceExpire){
+            throw new ApiError(400, "No valid fields provided to update");
+        }
     }
- 
-    if(updates.expiresAt && new Date(updates.expiresAt) <= new Date()){
+
+    if(forceExpire){
+        updates.expiresAt = new Date();
+        updates.isActive = false;
+    }
+
+    if(updates.expiresAt && !forceExpire && new Date(updates.expiresAt) <= new Date()){
         throw new ApiError(400, "Expiry date must be in the future");
     }
  
