@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Message } from "../models/message.model.js";
 import { EventGroup } from "../models/eventGroup.model.js";
 import { Club } from "../models/club.model.js";
+import { DirectConversation } from "../models/directConversation.model.js";
 import { verifyRoomAccess, getRoomKey } from "../utils/roomAccess.js";
 
 
@@ -84,6 +85,10 @@ export const registerChatHandlers = (io, socket) => {
                 fileSize: fileSize || null,
             })
 
+            if(roomType === "DirectConversation"){
+                await DirectConversation.findByIdAndUpdate(roomId, { lastMessageAt: message.createdAt });
+            }
+
             const populated = await Message.findById(message._id)
                 .populate("sender", "name rollNo employeeId");
 
@@ -132,7 +137,11 @@ export const registerChatHandlers = (io, socket) => {
                 )
             }
 
-            if(!isSender && !isAdmin && !isAdvisor){
+            const canDelete = message.roomType === "DirectConversation"
+                ? isSender
+                : (isSender || isAdmin || isAdvisor);
+
+            if(!canDelete){
                 return socket.emit("chat_error", { event: "delete_message", message: "You do not have permission to delete this message" });
             }
 
