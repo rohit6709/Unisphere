@@ -30,9 +30,9 @@ router.route('/get-all-clubs').get(verifyJWT, getAllClubs);
 router.route('/admin/pending-clubs').get(verifyJWT, verifyRole('admin', 'superadmin'), getPendingClubs);
 router.route('/create-club').post(verifyJWT, verifyRole('admin', 'superadmin'), createClub);
 router.route('/admin/:clubId/review-request').patch(verifyJWT, verifyRole('admin', 'superadmin'), reviewClubRequest);
-router.route('/admin/:clubId/assign-advisor').patch(verifyJWT, verifyRole('admin', 'superadmin'), assignAdvisor);
+router.route('/admin/:clubId/assign-advisor').patch(verifyJWT, verifyRole('admin', 'superadmin', 'hod'), assignAdvisor);
 router.route('/admin/:clubId/toggle-status').patch(verifyJWT, verifyRole('admin', 'superadmin'), toggleClubStatus);
-router.route('/admin/:clubId/remove-advisor').delete(verifyJWT, verifyRole('admin', 'superadmin'), removeAdvisor);
+router.route('/admin/:clubId/remove-advisor').delete(verifyJWT, verifyRole('admin', 'superadmin', 'hod'), removeAdvisor);
 
 //Facult + admin routes
 router.route('/update-club/:clubId').patch(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod'), updateClub);
@@ -41,7 +41,7 @@ router.route('/:clubId/assign-vice-president').patch(verifyJWT, verifyRole('admi
 router.route('/:clubId/members').get(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), getClubMembers);
 
 // Faculty + president + admin
-router.route('/:clubId/remove-member').delete(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), removeMember);
+router.route('/:clubId/remove-member/:rollNo').delete(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), removeMember);
 
 //Student
 router.route('/request-club').post(verifyJWT, verifyRole('student'), requestClub);
