@@ -300,7 +300,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     validateObjectId(eventId, "event ID");
 
-    const { action, rejectionReason } = req.body;
+    const { action, rejectionReason, comment } = req.body;
 
     if(!["approve", "reject"].includes(action)){
         throw new ApiError(400, "Action must be either approve or reject");
@@ -325,6 +325,8 @@ const reviewEvent = asyncHandler(async (req, res) => {
     }
     const  fromStatus = event.status;
     const performerModel = resolvePerformerModel(req.user.role);
+
+    const reviewComment = typeof comment === "string" && comment.trim() ? comment.trim() : null;
 
     if(action === "approve"){
         const conflict = await detectConflicts(event, event._id);
@@ -384,7 +386,8 @@ const reviewEvent = asyncHandler(async (req, res) => {
             performedByModel: performerModel,
             fromStatus,
             toStatus: "approved",
-            metaData: { hasConflict: !!conflict, eventGroupId: group?._id || null }
+            reason: reviewComment,
+            metadata: { hasConflict: !!conflict, eventGroupId: group?._id || null }
         })
         // notify president, vp - fire and forget
         const leaderRecipients = [];
@@ -407,13 +410,17 @@ const reviewEvent = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, { event, eventGroup: group ? { id: group._id, name: group.name, memberCount: group.members.length } : null }, conflict ? "Event approved with conflicts" : "Event approved successfully"));
     }
     else{
-        if(!rejectionReason || rejectionReason.trim() === ""){
+        const finalRejectionReason = typeof rejectionReason === "string" && rejectionReason.trim()
+            ? rejectionReason.trim()
+            : reviewComment;
+
+        if(!finalRejectionReason){
             throw new ApiError(400, "Rejection reason is required when rejecting an event");
         }
         event.status = "rejected";
         event.reviewedBy = req.user._id;
         event.reviewedAt = new Date();
-        event.rejectionReason = rejectionReason.trim();
+        event.rejectionReason = finalRejectionReason;
         await event.save();
 
         await createLog({
@@ -424,7 +431,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
             performedByModel: performerModel,
             fromStatus,
             toStatus: "rejected",
-            reason: rejectionReason.trim()
+            reason: finalRejectionReason
         });
 
         const clubForReject = await Club.findById(event.club._id).select("president vicePresident");
@@ -440,7 +447,7 @@ const reviewEvent = asyncHandler(async (req, res) => {
             notificationService.notifyEventRejected({
                 eventTitle: event.title,
                 clubName: event.club.name,
-                reason: rejectionReason.trim(),
+                reason: finalRejectionReason,
                 recipients: rejectRecipients,
                 data: { eventId: event._id.toString(), clubId: event.club._id.toString() }
             }).catch(err => console.error(`Failed to send event rejection notification for event ${event._id}:`, err.message));
