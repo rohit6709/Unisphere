@@ -18,15 +18,21 @@ export const uploadStudents = asyncHandler( async (req, res) => {
         const errors = [];
         const duplicates = [];
         const inserted = [];
+        const createdUsers = [];
 
         for(let user of csvData){
             if(!user.name || !user.email || !user.rollNo || !user.department){
                 errors.push({data: user, error: 'Missing required fields'});
                 continue;
             }
-            const existingUser = await Student.findOne({email: user.email});
+            const existingUser = await Student.findOne({
+                $or: [{ email: user.email }, { rollNo: user.rollNo }]
+            });
             if(existingUser){
-                duplicates.push(user);
+                duplicates.push({
+                    ...user,
+                    reason: existingUser.email === user.email ? 'Email already exists' : 'Roll number already exists'
+                });
                 continue;
             }
 
@@ -42,6 +48,13 @@ export const uploadStudents = asyncHandler( async (req, res) => {
             })
             await newUser.save();
             inserted.push(newUser);
+            createdUsers.push({
+                name: user.name,
+                email: user.email,
+                rollNo: user.rollNo,
+                department: user.department,
+                tempPassword: password
+            });
             
             try {
                 await sendCredentialsMail({name: user.name, email: user.email, password: password, role: 'student'});
@@ -53,7 +66,7 @@ export const uploadStudents = asyncHandler( async (req, res) => {
         fs.unlinkSync(req.file.path);
 
         return res.status(200).json(
-            new ApiResponse(200, { insertedCount: inserted.length, duplicates, errors }, 'Students uploaded successfully')
+            new ApiResponse(200, { insertedCount: inserted.length, duplicates, errors, createdUsers }, 'Students uploaded successfully')
         );
     } catch (error) {
         throw new ApiError(500, 'Failed to upload students');
