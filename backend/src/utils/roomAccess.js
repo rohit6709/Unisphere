@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { EventGroup } from "../models/eventGroup.model.js";
 import { Club } from "../models/club.model.js";
+import { DirectConversation } from "../models/directConversation.model.js";
 
 // used by both socket / chat.socket and chat.controller to check if user has access to the room
 
@@ -8,7 +9,7 @@ export const verifyRoomAccess = async (user, roomType, roomId, errorFactory) => 
     if(!mongoose.Types.ObjectId.isValid(roomId)) {
         throw errorFactory(400, "Invalid room ID");
     }
-    if(!["EventGroup", "Club"].includes(roomType)) {
+    if(!["EventGroup", "Club", "DirectConversation"].includes(roomType)) {
         throw errorFactory(400, "Invalid room type");
     }
 
@@ -51,6 +52,29 @@ export const verifyRoomAccess = async (user, roomType, roomId, errorFactory) => 
                 throw errorFactory(403, "You are not a member of this club");
             }
             return club;
+    }
+
+    if(roomType === "DirectConversation"){
+        const conversation = await DirectConversation.findById(roomId).select("participants");
+        if(!conversation){
+            throw errorFactory(404, "Conversation not found");
+        }
+
+        const requesterModel = ["admin", "superadmin"].includes(user.role)
+            ? "Admin"
+            : ["faculty", "hod"].includes(user.role)
+                ? "Faculty"
+                : "Student";
+
+        const hasAccess = conversation.participants.some(
+            (participant) => participant.user.toString() === user._id.toString() && participant.userModel === requesterModel
+        );
+
+        if(!hasAccess){
+            throw errorFactory(403, "You are not part of this conversation");
+        }
+
+        return conversation;
     }
 }
 
