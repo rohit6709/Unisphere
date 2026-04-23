@@ -18,15 +18,21 @@ export const uploadFaculty = asyncHandler( async (req, res)=> {
         const duplicates = [];
         const inserted = [];
         const errors = [];
+        const createdUsers = [];
 
         for(let ft of csvData){
             if(!ft.name || !ft.email || !ft.employeeId ||!ft.department || !ft.designation){
                 errors.push({data: ft, error: 'Missing required fields'});
                 continue;
             }
-            const existingFaculty = await Faculty.findOne({email: ft.email});
+            const existingFaculty = await Faculty.findOne({
+                $or: [{ email: ft.email }, { employeeId: ft.employeeId }]
+            });
             if(existingFaculty){
-                duplicates.push(ft);
+                duplicates.push({
+                    ...ft,
+                    reason: existingFaculty.email === ft.email ? 'Email already exists' : 'Employee ID already exists'
+                });
                 continue;
             }
 
@@ -46,6 +52,14 @@ export const uploadFaculty = asyncHandler( async (req, res)=> {
 
             await newFaculty.save();
             inserted.push(newFaculty);
+            createdUsers.push({
+                name: ft.name,
+                email: ft.email,
+                employeeId: ft.employeeId,
+                department: ft.department,
+                designation: ft.designation,
+                tempPassword: password
+            });
 
             try {
                 await sendCredentialsMail({name: ft.name, email: ft.email, password: password, role: "faculty"});
@@ -55,7 +69,7 @@ export const uploadFaculty = asyncHandler( async (req, res)=> {
         }
         fs.unlinkSync(req.file.path);
         return res.status(200).json(
-            new ApiResponse(200, { insertedCount: inserted.length, duplicates, errors }, 'Faculty data uploaded successfully')
+            new ApiResponse(200, { insertedCount: inserted.length, duplicates, errors, createdUsers }, 'Faculty data uploaded successfully')
         );
 
     } catch (error) {
