@@ -9,7 +9,7 @@ const messageSchema = new mongoose.Schema({
     },
     roomType: {
         type: String,
-        enum: ['EventGroup', 'Club'],
+        enum: ['EventGroup', 'Club', 'DirectConversation'],
         required: true
     },
     sender: {
@@ -19,7 +19,7 @@ const messageSchema = new mongoose.Schema({
     },
     senderModel: {
         type: String,
-        enum: ['Student', 'Faculty'],
+        enum: ['Student', 'Faculty', 'Admin'],
         default: null,
         required: false
     },
