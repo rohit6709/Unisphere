@@ -89,6 +89,22 @@ app.get('/api/v1', (req, res) => {
     res.send('Welcome to Unisphere API');
 })
 
+// Centralized API error formatter
+app.use((err, _req, res, _next) => {
+    const statusCode = Number(err?.statusCode) || 500;
+    const message = err?.message || 'Internal Server Error';
+
+    if (statusCode >= 500) {
+        console.error('[API_ERROR]', message, err?.stack || err);
+    }
+
+    return res.status(statusCode).json({
+        success: false,
+        message,
+        errors: Array.isArray(err?.errors) ? err.errors : [],
+    });
+});
+
 app.use((req, res) => {
     res.status(404).json({
         success: false,
