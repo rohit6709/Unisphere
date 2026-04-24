@@ -89,6 +89,23 @@ const validateObjectId = (id, label = "ID") => {
     }
 }
 
+const fetchPendingEventsForFilter = async (filter, skip, limit) => {
+    const baseQuery = Event.find(filter)
+        .populate("club", "name department")
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(Number(limit));
+
+    try {
+        return await baseQuery.clone().populate("submittedBy", "name rollNo employeeId");
+    } catch (error) {
+        // Legacy records can have missing/invalid submittedByModel, which breaks refPath populate.
+        // Fallback keeps approval queue functional instead of throwing 500.
+        console.error("[EVENT_PENDING] submittedBy populate failed, falling back without submitter details:", error?.message);
+        return await baseQuery;
+    }
+};
+
 // Club scoped controllers
 //creates event group and auto adds president, vice president and advisors
 const createEventGroup = async (event, club) => {
@@ -315,8 +332,13 @@ const reviewEvent = asyncHandler(async (req, res) => {
     // Role-based authorization
     const isAdmin = ["admin", "superadmin"].includes(req.user.role);
     const isAdvisor = event.club.advisors.map(id => id.toString()).includes(req.user._id.toString());
+    const isHodReviewer =
+        req.user.role === "hod" &&
+        req.user.department &&
+        event.club?.department &&
+        req.user.department.toString().trim().toLowerCase() === event.club.department.toString().trim().toLowerCase();
 
-    if(!isAdmin && !isAdvisor){
+    if(!isAdmin && !isAdvisor && !isHodReviewer){
         throw new ApiError(403, "You do not have permission to review this event");
     }
 
@@ -587,12 +609,7 @@ const getPendingEvents = asyncHandler(async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const [events, total] = await Promise.all([
-        Event.find(filter)
-            .populate("club", "name department")
-            .populate("submittedBy", "name rollNo")
-            .sort({ createdAt: 1 })
-            .skip(skip)
-            .limit(Number(limit)),
+        fetchPendingEventsForFilter(filter, skip, limit),
         Event.countDocuments(filter)
     ])
 
@@ -608,21 +625,27 @@ const getPendingEvents = asyncHandler(async (req, res) => {
 //Faculty advisor : get pending events for clubs they advise
 const getAdviseePendingEvents = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
-    
-    // Find clubs where this faculty is an advisor
-    const advisedClubs = await Club.find({ advisors: req.user._id }).select("_id");
-    const clubIds = advisedClubs.map(c => c._id);
 
-    const filter = { club: { $in: clubIds }, status: "pending_approval" };
+    const filter = { status: "pending_approval" };
+
+    if(["admin", "superadmin"].includes(req.user.role)){
+        // Admin users can inspect all pending events.
+    } else if(req.user.role === "hod"){
+        const deptFilter = { department: req.user.department };
+        const deptClubs = await Club.find(deptFilter).select("_id");
+        const clubIds = deptClubs.map((club) => club._id);
+        filter.club = { $in: clubIds };
+    } else {
+        // Faculty users only see clubs they advise.
+        const advisedClubs = await Club.find({ advisors: req.user._id }).select("_id");
+        const clubIds = advisedClubs.map((club) => club._id);
+        filter.club = { $in: clubIds };
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const [events, total] = await Promise.all([
-        Event.find(filter)
-            .populate("club", "name department")
-            .populate("submittedBy", "name rollNo")
-            .sort({ createdAt: 1 })
-            .skip(skip)
-            .limit(Number(limit)),
+        fetchPendingEventsForFilter(filter, skip, limit),
         Event.countDocuments(filter)
     ])
 
