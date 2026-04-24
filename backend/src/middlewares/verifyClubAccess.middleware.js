@@ -31,6 +31,18 @@ export const verifyClubAccess = asyncHandler(async (req, res, next) => {
         return next();
     }
 
+    // HOD can access clubs within their own department for governance/review workflows.
+    if(
+        req.user.role === "hod" &&
+        req.user.department &&
+        club.department &&
+        req.user.department.toString().trim().toLowerCase() === club.department.toString().trim().toLowerCase()
+    ){
+        req.club = club;
+        req.clubRole = "hod";
+        return next();
+    }
+
     if(club.president?._id.toString() === userId){
         req.club = club;
         req.clubRole = "president";
