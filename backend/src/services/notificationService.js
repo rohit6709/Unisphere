@@ -56,7 +56,7 @@ const send = async ({
 }
 
 const notifyEventSubmitted = ({ clubName, eventTitle, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "event_submitted",
         title: `New Event awaiting approval`,
@@ -67,7 +67,7 @@ const notifyEventSubmitted = ({ clubName, eventTitle, recipients, data = {} }) =
 }
 
 const notifyEventApproved = ({ eventTitle, clubName, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "event_approved",
         title: "Event approved!",
@@ -78,7 +78,7 @@ const notifyEventApproved = ({ eventTitle, clubName, recipients, data = {} }) =>
 }
 
 const notifyEventRejected = ({ eventTitle, clubName, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "event_rejected",
         title: "Event rejected",
@@ -89,7 +89,7 @@ const notifyEventRejected = ({ eventTitle, clubName, recipients, data = {} }) =>
 }
 
 const notifyEventLive = ({ eventTitle, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "event_live",
         title: "Event is live now!",
@@ -100,7 +100,7 @@ const notifyEventLive = ({ eventTitle, recipients, data = {} }) => {
 }
 
 const notifyEventCancelled = ({ eventTitle, reason, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "event_cancelled",
         title: "Event cancelled",
@@ -111,7 +111,7 @@ const notifyEventCancelled = ({ eventTitle, reason, recipients, data = {} }) => 
 }
 
 const notifyClubRequestApproved = ({ clubName, recipients }) => {
-    send({
+    return send({
         recipients,
         type: "club_request_approved",
         title: "Club request approved!",
@@ -122,7 +122,7 @@ const notifyClubRequestApproved = ({ clubName, recipients }) => {
 }
 
 const notifyClubRequestRejected = ({ clubName, reason, recipients }) => {
-    send({
+    return send({
         recipients,
         type: "club_request_rejected",
         title: "Club request rejected",
@@ -133,7 +133,7 @@ const notifyClubRequestRejected = ({ clubName, reason, recipients }) => {
 }
 
 const notifyMemberRemoved = ({ clubName, recipients }) => {
-    send({
+    return send({
         recipients,
         type: "club_member_removed",
         title: "Removed from club",
@@ -144,7 +144,7 @@ const notifyMemberRemoved = ({ clubName, recipients }) => {
 }
 
 const notifyRoleAssigned = ({ clubName, role, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "club_role_assigned",
         title: `You are now ${role} of ${clubName}!`,
@@ -155,7 +155,7 @@ const notifyRoleAssigned = ({ clubName, role, recipients, data = {} }) => {
 }
 
 const notifyRegistrationConfirmed = ({ eventTitle, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "registration_confirmed",
         title: "Registration confirmed",
@@ -166,7 +166,7 @@ const notifyRegistrationConfirmed = ({ eventTitle, recipients, data = {} }) => {
 }
 
 const notifyNewMessage = ({ senderName, roomName, recipients, data = {} }) => {
-    send({
+    return send({
         recipients,
         type: "new_message",
         title: `New message in ${roomName}`,
