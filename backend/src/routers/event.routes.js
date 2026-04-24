@@ -13,14 +13,14 @@ clubEventRouter.use(verifyJWT, verifyClubAccess);
 
 clubEventRouter.use("/:eventId/group", eventGroupRouter);
 
-clubEventRouter.route("/pending").get(requireClubRole("advisor", "admin"), getPendingEvents);
+clubEventRouter.route("/pending").get(requireClubRole("advisor", "admin", "hod"), getPendingEvents);
 
 clubEventRouter.route("/").get(getClubEvents).post(requireClubRole("president", "vicePresident", "admin"), createEvent);
 
 clubEventRouter.route("/:eventId/submit").patch(requireClubRole("president", "vicePresident", "admin"), submitEvent);
 clubEventRouter.route("/:eventId/update").patch(requireClubRole("president", "vicePresident", "admin"), updateEvent);
 
-clubEventRouter.route("/:eventId/review").patch(requireClubRole("advisor", "admin"), reviewEvent);
+clubEventRouter.route("/:eventId/review").patch(requireClubRole("advisor", "admin", "hod"), reviewEvent);
 clubEventRouter.route("/:eventId/logs").get(requireClubRole("advisor", "admin"), getEventLogs);
 
 clubEventRouter.route("/:eventId/cancel").patch(requireClubRole("president", "vicePresident", "advisor", "admin"), cancelEvent);
@@ -31,7 +31,7 @@ const eventRouter = Router();
 
 eventRouter.route("/all-events").get(verifyJWT, verifyRole("admin", "superadmin"), getAllEvents);
 eventRouter.route("/pending-requests").get(verifyJWT, verifyRole("admin", "superadmin", "faculty", "hod"), getGlobalPendingRequests);
-eventRouter.route("/my-submitted").get(verifyJWT, verifyRole("club_president", "club_vice_president", "admin", "superadmin"), getMySubmittedEvents);
+eventRouter.route("/my-submitted").get(verifyJWT, verifyRole("student", "club_president", "club_vice_president", "admin", "superadmin"), getMySubmittedEvents);
 eventRouter.route("/advisee-pending").get(verifyJWT, verifyRole("faculty", "hod", "admin", "superadmin"), getAdviseePendingEvents);
 
 eventRouter.route("/public").get(verifyJWT, simpleCache(120), getPublicEvents);
