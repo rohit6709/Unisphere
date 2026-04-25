@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { getPublicEvent } from '@/services/eventService';
 import { getMyRegistrationStatus, registerForEvent } from '@/services/registrationService';
+import { isStudentRole } from '@/utils/roles';
 
 export default function EventProfile() {
   const { id } = useParams();
@@ -37,7 +38,7 @@ export default function EventProfile() {
   const { data: registrationStatus = null } = useQuery({
     queryKey: ['registration-status', id],
     queryFn: () => getMyRegistrationStatus(id),
-    enabled: !!user && role === 'student',
+    enabled: !!user && isStudentRole(role),
   });
 
   const isRegistered = Boolean(registrationStatus);
@@ -69,7 +70,7 @@ export default function EventProfile() {
   const endDate = new Date(event.endsAt);
   const hasStarted = now >= startDate;
   const eventClosed = !['approved', 'live'].includes(event.status);
-  const canRegister = role === 'student' && !isRegistered && !hasStarted && !isPastDeadline && !isFull && !eventClosed;
+  const canRegister = isStudentRole(role) && !isRegistered && !hasStarted && !isPastDeadline && !isFull && !eventClosed;
   const venueName = event?.venue?.name || 'TBA';
 
   return (
@@ -182,13 +183,13 @@ export default function EventProfile() {
                 </Button>
               )}
 
-              {role !== 'student' && !user && (
+              {!user && (
                  <Link to="/login" className="inline-flex w-full items-center justify-center rounded-2xl h-14 px-6 bg-indigo-600 text-white hover:bg-blue-700 font-bold shadow-lg shadow-indigo-500/20">
                    Login to Register
                  </Link>
               )}
 
-              {role === 'student' && isRegistered && hasStarted && (
+              {isStudentRole(role) && isRegistered && hasStarted && (
                 <Link to={`/events/${id}/feedback`}>
                   <Button variant="outline" className="w-full h-12 rounded-2xl mt-3">
                     Share Feedback
