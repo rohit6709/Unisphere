@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/utils/cn';
+import { getInitials } from '@/utils/getInitials';
 
 export default function StudentManagementPage() {
   useDocumentTitle('Student Management | Unisphere');
@@ -143,7 +144,7 @@ export default function StudentManagementPage() {
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/10">
-                            {student.name.charAt(0)}
+                            {getInitials(student?.name)}
                           </div>
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white leading-tight">{student.name}</p>
@@ -228,3 +229,4 @@ export default function StudentManagementPage() {
     </div>
   );
 }
+
