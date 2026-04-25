@@ -13,8 +13,8 @@ const redisConnectionOptions = {
 export const redisConnection = process.env.REDIS_URL
     ? new Redis(process.env.REDIS_URL, redisConnectionOptions)
     : new Redis({
-        host: process.env.REDIS_HOST || "127.0.0.1",
-        port: Number(process.env.REDIS_PORT) || 6379,
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
         password: process.env.REDIS_PASSWORD || undefined,
         ...redisConnectionOptions
     });
