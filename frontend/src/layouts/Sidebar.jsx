@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, Bell, MessageSquare, LogOut,
   ShieldCheck, BookOpen, ClipboardList, UserCog, UserCheck,
   Megaphone, ListOrdered, BarChart3, ClipboardCheck, BookMarked,
-  GraduationCap, CalendarClock, BellRing, UserCircle, Trophy,
+  GraduationCap, CalendarClock, BellRing, UserCircle, Trophy, Building2,
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -56,6 +56,7 @@ const NAV_CONFIG = {
       group: 'Club Advising',
       links: [
         { name: 'My Clubs', path: '/faculty/clubs', icon: Users },
+        { name: 'Request Club', path: '/clubs/request', icon: Building2 },
         { name: 'Event Review', path: '/faculty/events', icon: ClipboardCheck },
       ],
     },
@@ -80,6 +81,7 @@ const NAV_CONFIG = {
       links: [
         { name: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
         { name: 'Approvals', path: '/admin/approvals', icon: ShieldCheck },
+        { name: 'Audit Logs', path: '/admin/audit-logs', icon: ClipboardList },
       ],
     },
     {
@@ -87,6 +89,8 @@ const NAV_CONFIG = {
       links: [
         { name: 'Students', path: '/admin/students', icon: GraduationCap },
         { name: 'Faculty', path: '/admin/faculty', icon: BookOpen },
+        { name: 'Student Upload', path: '/admin/students/upload', icon: UserCheck },
+        { name: 'Faculty Upload', path: '/admin/faculty/upload', icon: UserCheck },
       ],
     },
     {
@@ -116,6 +120,7 @@ const NAV_CONFIG = {
       links: [
         { name: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
         { name: 'Approvals', path: '/admin/approvals', icon: ShieldCheck },
+        { name: 'Audit Logs', path: '/admin/audit-logs', icon: ClipboardList },
       ],
     },
     {
@@ -124,6 +129,8 @@ const NAV_CONFIG = {
         { name: 'Students', path: '/admin/students', icon: GraduationCap },
         { name: 'Faculty', path: '/admin/faculty', icon: BookOpen },
         { name: 'Admins', path: '/admin/admins', icon: UserCog },
+        { name: 'Student Upload', path: '/admin/students/upload', icon: UserCheck },
+        { name: 'Faculty Upload', path: '/admin/faculty/upload', icon: UserCheck },
       ],
     },
     {
@@ -157,20 +164,20 @@ const NavItem = ({ link, onClick }) => {
         cn(
           'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative',
           isActive
-            ? 'bg-[var(--primary-glow)] text-[var(--primary)] font-semibold'
-            : 'text-[var(--text)] hover:bg-[var(--bg-card-alt)] hover:text-[var(--text-h)]'
+            ? 'bg-(--primary-glow) text-(--primary) font-semibold'
+            : 'text-(--text) hover:bg-(--bg-card-alt) hover:text-(--text-h)'
         )
       }
     >
       {({ isActive }) => (
         <>
           {isActive && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--primary)] rounded-r-full" />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-(--primary) rounded-r-full" />
           )}
           <link.icon
             className={cn(
-              'h-4 w-4 flex-shrink-0 transition-colors',
-              isActive ? 'text-[var(--primary)]' : 'text-[var(--text)] group-hover:text-[var(--text-h)]'
+              'h-4 w-4 shrink-0 transition-colors',
+              isActive ? 'text-(--primary)' : 'text-(--text) group-hover:text-(--text-h)'
             )}
             aria-hidden="true"
           />
@@ -189,7 +196,7 @@ const NavItem = ({ link, onClick }) => {
 // ─── Nav Group ────────────────────────────────────────────────────────────────
 const NavGroup = ({ group, links, onLinkClick }) => (
   <div className="mb-4">
-    <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text)] opacity-60 select-none">
+    <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-(--text) opacity-60 select-none">
       {group}
     </p>
     <div className="space-y-0.5">
@@ -206,16 +213,27 @@ const ROLE_BADGE_STYLE = {
   club_president: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   club_vice_president: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   faculty: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+  hod: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
   admin: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   superadmin: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+};
+
+const getRoleDisplay = (currentRole) => {
+  if (currentRole === 'club_president') return 'Student';
+  if (currentRole === 'club_vice_president') return 'Student';
+  if (currentRole === 'hod') return 'Faculty';
+  if (currentRole === 'superadmin') return 'Admin';
+  return currentRole ? currentRole.replace(/_/g, ' ') : '';
 };
 
 // ─── Main Sidebar ─────────────────────────────────────────────────────────────
 export const Sidebar = ({ isOpen, setOpen }) => {
   const { role, user, logout } = useAuth();
+  const roleDisplay = getRoleDisplay(role);
 
   const navGroups = useMemo(() => {
-    const fallback = NAV_CONFIG[role] || NAV_CONFIG.student || [];
+    const navRole = role === 'hod' ? 'faculty' : role;
+    const fallback = NAV_CONFIG[navRole] || NAV_CONFIG.student || [];
     const isClubLeader = ['club_president', 'club_vice_president'].includes(role);
 
     if (!isClubLeader) {
@@ -263,7 +281,7 @@ export const Sidebar = ({ isOpen, setOpen }) => {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-64 flex flex-col',
-          'border-r border-[var(--border)] bg-[var(--bg-card)]',
+          'border-r border-(--border) bg-(--bg-card)',
           'transition-transform duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0 lg:static lg:flex'
@@ -271,22 +289,22 @@ export const Sidebar = ({ isOpen, setOpen }) => {
         aria-label="Primary navigation"
       >
         {/* Logo Header */}
-        <div className="flex h-16 shrink-0 items-center gap-2.5 px-5 border-b border-[var(--border)]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] shadow-sm">
+        <div className="flex h-16 shrink-0 items-center gap-2.5 px-5 border-b border-(--border)">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-(--primary) shadow-sm">
             <LayoutDashboard className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-heading font-extrabold text-[var(--text-h)] tracking-tight">
+          <span className="text-xl font-heading font-extrabold text-(--text-h) tracking-tight">
             Unisphere
           </span>
         </div>
 
         {/* User Chip */}
-        <div className="mx-3 mt-4 mb-3 flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card-alt)] px-3 py-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-purple-600 text-sm font-bold text-white shadow-sm">
+        <div className="mx-3 mt-4 mb-3 flex items-center gap-3 rounded-xl border border-(--border) bg-(--bg-card-alt) px-3 py-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-(--primary) to-purple-600 text-sm font-bold text-white shadow-sm">
             {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[var(--text-h)] leading-tight">
+            <p className="truncate text-sm font-semibold text-(--text-h) leading-tight">
               {user?.name || 'User'}
             </p>
             <span
@@ -295,7 +313,7 @@ export const Sidebar = ({ isOpen, setOpen }) => {
                 ROLE_BADGE_STYLE[role] || 'bg-gray-100 text-gray-600'
               )}
             >
-              {role?.replace('_', ' ')}
+              {roleDisplay}
             </span>
           </div>
         </div>
@@ -313,10 +331,10 @@ export const Sidebar = ({ isOpen, setOpen }) => {
         </nav>
 
         {/* Logout Footer */}
-        <div className="shrink-0 border-t border-[var(--border)] p-3">
+        <div className="shrink-0 border-t border-(--border) p-3">
           <button
             onClick={logout}
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--red)] transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-(--red) transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-400"
           >
             <LogOut className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
             <span>Sign Out</span>
