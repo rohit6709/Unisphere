@@ -53,7 +53,7 @@ const clubSchema = new mongoose.Schema({
     },
     requestedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
+        ref: 'Faculty',
         default: null
     },
     approvedBy: {
@@ -86,7 +86,7 @@ const clubSchema = new mongoose.Schema({
 
 
 clubSchema.virtual('memberCount').get(function() {
-    return this.members.length;
+    return Array.isArray(this.members) ? this.members.length : 0;
 })
 
 clubSchema.set('toJSON', { virtuals: true });
