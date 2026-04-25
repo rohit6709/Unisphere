@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import studentRouter from './routers/studentAuth.routes.js';
 import facultyRouter from './routers/facultyAuth.routes.js';
 import adminRouter from './routers/adminAuth.routes.js';
+import authRouter from './routers/auth.routes.js';
 import clubRouter from './routers/club.routes.js';
 import eventRouter, { clubEventRouter } from './routers/event.routes.js';
 import registrationRouter from './routers/registration.routes.js';
@@ -50,6 +51,7 @@ app.use(express.static('public'));
 app.use(cookieParser());
 
 // Auth routes
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/students', studentRouter);
 app.use('/api/v1/faculty', facultyRouter);
 app.use('/api/v1/admin', adminRouter);
