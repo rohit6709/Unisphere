@@ -5,11 +5,11 @@ import { verifyRole } from "../middlewares/role.middleware.js";
 
 const registrationRouter = Router();
 
-registrationRouter.route("/my-registrations").get(verifyJWT, verifyRole("student"), getMyRegistrations);
+registrationRouter.route("/my-registrations").get(verifyJWT, verifyRole("student", "club_president", "club_vice_president"), getMyRegistrations);
 registrationRouter.route("/all").get(verifyJWT, verifyRole("admin", "superadmin"), getAllRegistrations);
 
-registrationRouter.route("/:eventId/register").post(verifyJWT, verifyRole("student"), registerForEvent);
-registrationRouter.route("/:eventId/unregister").delete(verifyJWT, verifyRole("student"), unregisterFromEvent);
+registrationRouter.route("/:eventId/register").post(verifyJWT, verifyRole("student", "club_president", "club_vice_president"), registerForEvent);
+registrationRouter.route("/:eventId/unregister").delete(verifyJWT, verifyRole("student", "club_president", "club_vice_president"), unregisterFromEvent);
 
 registrationRouter.route("/:eventId/registrations").get(verifyJWT, verifyRole("admin", "superadmin", "faculty", "hod"), getEventRegistrations);
 registrationRouter.route("/:eventId/registrations/bulk-status").patch(verifyJWT, verifyRole("admin", "superadmin"), bulkUpdateRegistrationStatus);
