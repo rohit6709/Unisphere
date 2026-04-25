@@ -8,6 +8,7 @@ import { motion as Motion } from 'framer-motion';
 import { FeedbackForm } from '@/components/features/FeedbackForm';
 import { cn } from '@/utils/cn';
 import { feedbackService } from '@/services/feedbackService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function FeedbackSection({ eventId, canSubmit }) {
   const queryClient = useQueryClient();
@@ -89,7 +90,7 @@ export default function FeedbackSection({ eventId, canSubmit }) {
                        {item.isAnonymous ? (
                          <Shield className="h-5 w-5 text-gray-400" />
                        ) : (
-                         item.student?.profilePicture ? <img src={item.student.profilePicture} className="h-full w-full object-cover" /> : item.student?.name.charAt(0)
+                                     item.student?.profilePicture ? <img src={item.student.profilePicture} className="h-full w-full object-cover" /> : getInitials(item.student?.name)
                        )}
                     </div>
                     <div>
