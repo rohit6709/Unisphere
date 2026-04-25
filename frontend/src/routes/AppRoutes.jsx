@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 
 // ─── Auth & Onboarding (eager loaded — on the critical path) ──────────────────
 import LandingPage from '@/pages/LandingPage';
@@ -16,6 +16,8 @@ import { RoleGuard } from './RoleGuard';
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { useAuth } from '@/context/AuthContext';
+import { getDashboardPath } from '@/utils/roleRedirect';
 
 // ─── Shared / Public Pages (lazy) ────────────────────────────────────────────
 const ClubDirectory      = lazy(() => import('@/pages/clubs/ClubDirectory'));
@@ -24,7 +26,8 @@ const ClubGovernancePage = lazy(() => import('@/pages/ClubGovernancePage'));
 const DiscoveryPage      = lazy(() => import('@/pages/DiscoveryPage'));
 const EventDirectory     = lazy(() => import('@/pages/events/EventDirectory'));
 const EventProfile       = lazy(() => import('@/pages/events/EventProfile'));
-const ChatPage           = lazy(() => import('@/pages/student/ChatPage'));
+const MessagingHub       = lazy(() => import('@/pages/chat/MessagingHub'));
+const ProfileSettingsPage = lazy(() => import('@/pages/ProfileSettingsPage'));
 
 // ─── Student Pages (lazy) ─────────────────────────────────────────────────────
 const StudentDashboard     = lazy(() => import('@/pages/student/StudentDashboard'));
@@ -38,6 +41,10 @@ const RequestClubPage      = lazy(() => import('@/pages/student/RequestClubPage'
 const CreateEventPage      = lazy(() => import('@/pages/student/CreateEventPage'));
 const EditEventPage        = lazy(() => import('@/pages/student/EditEventPage'));
 const MySubmittedEventsPage = lazy(() => import('@/pages/student/MySubmittedEventsPage'));
+const ClubBrowserPage      = lazy(() => import('@/pages/student/ClubBrowserPage'));
+const ClubDetailPage       = lazy(() => import('@/pages/student/ClubDetailPage'));
+const EventsPage           = lazy(() => import('@/pages/student/EventsPage'));
+const EventDetailPage      = lazy(() => import('@/pages/student/EventDetailPage'));
 
 // ─── Faculty Pages (lazy) ─────────────────────────────────────────────────────
 const FacultyDashboard          = lazy(() => import('@/pages/faculty/FacultyDashboard'));
@@ -82,20 +89,26 @@ const PageLoader = () => (
   </div>
 );
 
+const DashboardRedirect = () => {
+  const { role } = useAuth();
+
+  return <Navigate to={getDashboardPath(role)} replace />;
+};
+
 // ─── 404 Page ─────────────────────────────────────────────────────────────────
-const NotFoundPage = () => (
+const NotFoundPageComponent = () => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-(--bg) text-center px-4">
     <p className="text-8xl font-heading font-extrabold text-(--primary) opacity-20 select-none">404</p>
     <h1 className="text-2xl font-heading font-bold text-(--text-h)">Page Not Found</h1>
     <p className="text-(--text) max-w-sm">
       The page you're looking for doesn't exist or has been moved.
     </p>
-    <a
-      href="/"
+    <Link
+      to="/"
       className="mt-2 inline-flex items-center rounded-lg bg-(--primary) px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
     >
       Back to Home
-    </a>
+    </Link>
   </div>
 );
 
@@ -124,16 +137,32 @@ export const AppRoutes = () => {
           <Route element={<DashboardLayout />}>
 
             {/* Dashboard hub — redirect to role-specific dashboard */}
-            <Route path="/dashboard" element={<Navigate to="." replace />} />
+            <Route path="/dashboard" element={<DashboardRedirect />} />
+
+            {/* ── Shared Routes (all authenticated roles) ────────────── */}
+            <Route path="/discovery"        element={<DiscoveryPage />} />
+            <Route path="/events"           element={<EventDirectory />} />
+            <Route path="/events/:id"       element={<EventProfile />} />
+            <Route path="/clubs"            element={<ClubDirectory />} />
+            <Route path="/clubs/:id"        element={<ClubProfile />} />
+            <Route path="/clubs/:id/governance" element={<ClubGovernancePage />} />
+            <Route path="/messages"         element={<MessagingHub />} />
+            <Route path="/chat"             element={<Navigate to="/messages" replace />} />
+            <Route path="/notices"          element={<NoticesPage />} />
+            <Route path="/notifications"    element={<NotificationsPage />} />
+            <Route path="/profile/settings" element={<ProfileSettingsPage />} />
 
             {/* ── Student Routes ─────────────────────────────────────── */}
             <Route element={<RoleGuard allowedRoles={['student', 'club_president', 'club_vice_president']} />}>
-              <Route path="/dashboard/student"  element={<StudentDashboard />} />
-              <Route path="/my-clubs"           element={<MyClubsPage />} />
-              <Route path="/clubs/request"      element={<RequestClubPage />} />
-              <Route path="/my-registrations"   element={<MyRegistrationsPage />} />
-              <Route path="/events/:id/feedback" element={<EventFeedbackPage />} />
-              <Route path="/profile/student"    element={<StudentProfilePage />} />
+              <Route path="/dashboard/student"    element={<StudentDashboard />} />
+              <Route path="/my-clubs"             element={<MyClubsPage />} />
+              <Route path="/my-registrations"     element={<MyRegistrationsPage />} />
+              <Route path="/events/:id/feedback"  element={<EventFeedbackPage />} />
+              <Route path="/profile/student"      element={<StudentProfilePage />} />
+              <Route path="/student/clubs"        element={<ClubBrowserPage />} />
+              <Route path="/student/clubs/:id"    element={<ClubDetailPage />} />
+              <Route path="/student/events"       element={<EventsPage />} />
+              <Route path="/student/events/:id"   element={<EventDetailPage />} />
             </Route>
 
             <Route element={<RoleGuard allowedRoles={['student', 'club_president', 'club_vice_president']} />}>
@@ -146,6 +175,7 @@ export const AppRoutes = () => {
             <Route element={<RoleGuard allowedRoles={['faculty', 'hod']} />}>
               <Route path="/dashboard/faculty"  element={<FacultyDashboard />} />
               <Route path="/faculty/clubs"      element={<FacultyClubManagementPage />} />
+              <Route path="/clubs/request"      element={<RequestClubPage />} />
               <Route path="/faculty/events"     element={<EventReviewPage />} />
               <Route path="/faculty/notices"    element={<FacultyNoticeManagement />} />
               <Route path="/profile/faculty"    element={<FacultyProfilePage />} />
@@ -174,23 +204,11 @@ export const AppRoutes = () => {
               </Route>
             </Route>
 
-            {/* ── Shared Routes (all authenticated roles) ────────────── */}
-            <Route path="/discovery"        element={<DiscoveryPage />} />
-            <Route path="/events"           element={<EventDirectory />} />
-            <Route path="/events/:id"       element={<EventProfile />} />
-            <Route path="/clubs"            element={<ClubDirectory />} />
-            <Route path="/clubs/:id"        element={<ClubProfile />} />
-            <Route path="/clubs/:id/governance" element={<ClubGovernancePage />} />
-            <Route path="/messages"         element={<ChatPage />} />
-            <Route path="/chat"             element={<Navigate to="/messages" replace />} />
-            <Route path="/notices"          element={<NoticesPage />} />
-            <Route path="/notifications"    element={<NotificationsPage />} />
-
           </Route>
         </Route>
 
         {/* ── 404 Catch-all ───────────────────────────────────────────────── */}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPageComponent />} />
 
       </Routes>
     </Suspense>
