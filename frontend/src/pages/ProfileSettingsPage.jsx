@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/utils/cn';
+import { getInitials } from '@/utils/getInitials';
 
 export default function ProfileSettingsPage() {
   const { user, role, updateUserData } = useAuth();
@@ -159,7 +160,7 @@ export default function ProfileSettingsPage() {
                             {uploadMutation.isPending ? (
                                <Loader2 className="h-8 w-8 animate-spin" />
                             ) : (
-                               user?.profilePicture ? <img src={user.profilePicture} className="h-full w-full object-cover" /> : user?.name.charAt(0)
+                               user?.profilePicture ? <img src={user.profilePicture} className="h-full w-full object-cover" /> : getInitials(user?.name)
                             )}
                          </div>
                          <button 
