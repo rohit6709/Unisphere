@@ -31,12 +31,19 @@ export default function EventReviewPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [reviewComment, setReviewComment] = useState('');
 
+  const normalizeList = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.events)) return value.events;
+    if (Array.isArray(value?.logs)) return value.logs;
+    return [];
+  };
+
   const { data: eventsData, isLoading, isError, error } = useQuery({
     queryKey: ['advisee-pending-events'],
     queryFn: () => getAdviseePendingEvents(),
   });
 
-  const events = useMemo(() => eventsData?.events || eventsData || [], [eventsData]);
+  const events = useMemo(() => normalizeList(eventsData), [eventsData]);
 
   const reviewMutation = useMutation({
     mutationFn: ({ clubId, eventId, action, reason, comment }) =>
@@ -62,7 +69,7 @@ export default function EventReviewPage() {
     enabled: Boolean(selectedEvent?._id && selectedEvent?.club?._id),
   });
 
-  const logs = logsData?.logs || logsData || [];
+  const logs = useMemo(() => normalizeList(logsData), [logsData]);
 
   const pendingCountByClub = useMemo(
     () => events.reduce((acc, event) => {
