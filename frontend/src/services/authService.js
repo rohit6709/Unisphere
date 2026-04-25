@@ -23,6 +23,7 @@ const authPath = (role, suffix) => `${getAuthBase(role)}${suffix}`;
 export const loginStudent = (payload) => apiRequest('post', authPath('student', '/login'), { data: payload });
 export const loginFaculty = (payload) => apiRequest('post', authPath('faculty', '/login'), { data: payload });
 export const loginAdmin = (payload) => apiRequest('post', authPath('admin', '/login'), { data: payload });
+export const loginWithEmail = (payload) => apiRequest('post', '/auth/login', { data: payload });
 
 export const logoutStudent = () => apiRequest('post', authPath('student', '/logout'));
 export const logoutFaculty = () => apiRequest('post', authPath('faculty', '/logout'));
