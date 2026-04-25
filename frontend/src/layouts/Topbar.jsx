@@ -8,9 +8,17 @@ import { formatDistanceToNow } from 'date-fns';
 import { useThemeContext } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
-import { api } from '@/api/axios';
 import { cn } from '@/utils/cn';
 import { getProfilePath } from '@/utils/roleRedirect';
+import { getMyNotifications, getUnreadCount, markAllAsRead as markAllNotificationsAsRead, markAsRead as markNotificationAsRead } from '@/services/notificationService';
+
+const getRoleDisplay = (currentRole) => {
+  if (currentRole === 'club_president') return 'Student';
+  if (currentRole === 'club_vice_president') return 'Student';
+  if (currentRole === 'hod') return 'Faculty';
+  if (currentRole === 'superadmin') return 'Admin';
+  return currentRole ? currentRole.replace(/_/g, ' ') : '';
+};
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,12 +29,17 @@ const NotificationDropdown = () => {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const { data } = await api.get('/notifications');
-      return data.data.notifications || [];
-    }
+      const data = await getMyNotifications({ page: 1, limit: 8 });
+      return data?.notifications || [];
+    },
   });
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const { data: unreadData } = useQuery({
+    queryKey: ['notifications-unread-count'],
+    queryFn: () => getUnreadCount(),
+  });
+
+  const unreadCount = unreadData?.count ?? notifications.filter((n) => !n.isRead).length;
 
   useEffect(() => {
     if (!socket) return;
@@ -34,6 +47,10 @@ const NotificationDropdown = () => {
       queryClient.setQueryData(['notifications'], (old) => {
         return [notification, ...(old || [])];
       });
+      queryClient.setQueryData(['notifications-unread-count'], (old) => ({
+        ...(old || {}),
+        count: (old?.count || 0) + (notification?.isRead ? 0 : 1),
+      }));
     };
     socket.on('notification', handleNewNotification);
     return () => socket.off('notification', handleNewNotification);
@@ -49,21 +66,29 @@ const NotificationDropdown = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const markAsRead = useMutation({
-    mutationFn: (id) => api.patch(`/notifications/${id}/read`),
+  const markAsReadMutation = useMutation({
+    mutationFn: (id) => markNotificationAsRead(id),
     onSuccess: (_, id) => {
       queryClient.setQueryData(['notifications'], (old) => 
-        old.map(n => n._id === id ? { ...n, isRead: true } : n)
+        (old || []).map((n) => n._id === id ? { ...n, isRead: true } : n)
       );
+      queryClient.setQueryData(['notifications-unread-count'], (old) => ({
+        ...(old || {}),
+        count: Math.max(0, (old?.count || 0) - 1),
+      }));
     }
   });
 
   const markAllAsRead = useMutation({
-    mutationFn: () => api.patch('/notifications/read-all'),
+    mutationFn: () => markAllNotificationsAsRead(),
     onSuccess: () => {
       queryClient.setQueryData(['notifications'], (old) => 
-        old.map(n => ({ ...n, isRead: true }))
+        (old || []).map((n) => ({ ...n, isRead: true }))
       );
+      queryClient.setQueryData(['notifications-unread-count'], (old) => ({
+        ...(old || {}),
+        count: 0,
+      }));
     }
   });
 
@@ -138,7 +163,7 @@ const NotificationDropdown = () => {
                         </div>
                         {!notification.isRead && (
                           <button 
-                            onClick={() => markAsRead.mutate(notification._id)}
+                            onClick={() => markAsReadMutation.mutate(notification._id)}
                             className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--bg-card)] rounded transition-all shrink-0 self-start text-[var(--primary)]"
                             title="Mark as read"
                           >
@@ -172,6 +197,7 @@ export const Topbar = ({ setSidebarOpen }) => {
   const { theme, toggleTheme } = useThemeContext();
   const { user, role, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const roleDisplay = getRoleDisplay(role);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--bg-card)]/80 backdrop-blur-md">
@@ -214,7 +240,7 @@ export const Topbar = ({ setSidebarOpen }) => {
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:ml-1">
                 <span className="text-sm font-medium text-[var(--text-h)] leading-none">{user?.name || 'User'}</span>
-                <span className="text-xs text-[var(--text)] mt-1 capitalize">{role?.replace('_', ' ')}</span>
+                <span className="text-xs text-[var(--text)] mt-1">{roleDisplay}</span>
               </div>
             </button>
 
