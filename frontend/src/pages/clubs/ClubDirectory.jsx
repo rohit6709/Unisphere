@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ClubSkeleton } from '@/components/ui/Skeleton';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { cn } from '@/utils/cn';
+import { getInitials } from '@/utils/getInitials';
 
 export default function ClubDirectory() {
   useDocumentTitle('Discover Communities | Unisphere');
@@ -56,11 +57,7 @@ export default function ClubDirectory() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{clubs?.length || 0}</p>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Active Clubs</p>
            </div>
-           <div className="h-12 w-px bg-gray-200 dark:bg-gray-800" />
-           <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">5k+</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Total Members</p>
-           </div>
+           
         </div>
       </section>
 
@@ -123,7 +120,7 @@ function ClubCard({ club, role }) {
       {/* Club Icon/Logo Placeholder */}
       <div className="flex justify-between items-start mb-8">
         <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-indigo-500/20 group-hover:rotate-6 transition-transform">
-          {club.name.charAt(0)}
+          {getInitials(club.name)}
         </div>
         {role === 'admin' && (
            <span className={cn(
