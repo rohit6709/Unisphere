@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/utils/cn';
+import { getInitials } from '@/utils/getInitials';
 
 export default function FacultyManagementPage() {
   useDocumentTitle('Faculty Management | Unisphere');
@@ -149,8 +150,8 @@ export default function FacultyManagementPage() {
                     >
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/10 text-xl">
-                            {fac.name.charAt(0)}
+                          <div className="h-12 w-12 rounded-2xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/10 text-xl">
+                            {getInitials(fac?.name)}
                           </div>
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white leading-tight">{fac.name}</p>
@@ -241,3 +242,4 @@ export default function FacultyManagementPage() {
     </div>
   );
 }
+
