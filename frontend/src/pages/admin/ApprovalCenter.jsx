@@ -185,8 +185,8 @@ export default function ApprovalCenter() {
                   </div>
                   <div className="text-right text-xs text-gray-500 dark:text-gray-400">
                     <p>Requested by</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-white">{club.requestedBy?.name || 'Unknown student'}</p>
-                    <p>{club.requestedBy?.rollNo || club.requestedBy?.email || ''}</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-white">{club.requestedBy?.name || 'Unknown requester'}</p>
+                    <p>{club.requestedBy?.employeeId || club.requestedBy?.email || ''}</p>
                   </div>
                 </div>
               </button>
@@ -234,7 +234,7 @@ export default function ApprovalCenter() {
                   items={[
                     { label: 'Department', value: selectedClub.department || 'N/A' },
                     { label: 'Requested By', value: selectedClub.requestedBy?.name || 'Unknown' },
-                    { label: 'Requester ID', value: selectedClub.requestedBy?.rollNo || 'N/A' },
+                    { label: 'Requester ID', value: selectedClub.requestedBy?.employeeId || selectedClub.requestedBy?.email || 'N/A' },
                     { label: 'Current Status', value: selectedClub.status },
                   ]}
                 />
