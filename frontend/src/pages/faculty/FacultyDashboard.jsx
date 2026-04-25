@@ -8,6 +8,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { getMyAdvisedClubs } from '@/services/clubService';
 import { getAdviseePendingEvents } from '@/services/eventService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function FacultyDashboard() {
   useDocumentTitle('Faculty Dashboard');
@@ -94,7 +95,7 @@ export default function FacultyDashboard() {
                 <Link key={club._id} to={`/clubs/${club._id}`} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--primary)] transition-colors shadow-sm flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-[var(--bg-card-alt)] flex items-center justify-center text-[var(--text-h)] font-bold text-lg group-hover:bg-[var(--primary-glow)] group-hover:text-[var(--primary)] transition-colors">
-                      {club.name.charAt(0)}
+                      {getInitials(club.name)}
                     </div>
                     <div>
                       <h3 className="font-bold text-[var(--text-h)]">{club.name}</h3>
@@ -146,3 +147,4 @@ export default function FacultyDashboard() {
     </div>
   );
 }
+
