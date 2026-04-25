@@ -18,8 +18,10 @@ import toast from 'react-hot-toast';
 
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
-import { getClubById, joinClub, removeMember } from '@/services/clubService';
+import { getClubById, getClubProfile, getClubTags, joinClub, removeMember } from '@/services/clubService';
 import { getPublicEvents } from '@/services/eventService';
+import { getInitials } from '@/utils/getInitials';
+import { isStudentRole } from '@/utils/roles';
 
 export default function ClubProfile() {
   const { id } = useParams();
@@ -29,7 +31,22 @@ export default function ClubProfile() {
 
   const { data: club, isLoading, isError } = useQuery({
     queryKey: ['club', id],
-    queryFn: () => getClubById(id),
+    queryFn: async () => {
+      try {
+        return await getClubProfile(id);
+      } catch {
+        return getClubById(id);
+      }
+    },
+  });
+
+  const { data: clubTags = [] } = useQuery({
+    queryKey: ['club-tags', id],
+    queryFn: async () => {
+      const payload = await getClubTags(id);
+      return payload?.tags || payload || [];
+    },
+    enabled: Boolean(id),
   });
 
   const { data: events = [] } = useQuery({
@@ -88,7 +105,7 @@ export default function ClubProfile() {
         <div className="absolute bottom-10 left-10 right-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 text-center sm:text-left">
             <div className="h-32 w-32 rounded-4xl bg-white p-2 shadow-2xl flex items-center justify-center text-5xl font-black text-indigo-600 border-4 border-white/20">
-              {club.name.charAt(0)}
+              {getInitials(club.name)}
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap justify-center sm:justify-start gap-2">
@@ -109,7 +126,7 @@ export default function ClubProfile() {
             </div>
           </div>
 
-          {role === 'student' && !isMember && (
+          {isStudentRole(role) && !isMember && (
              <Button 
                size="lg" 
                className="rounded-2xl h-14 px-8 text-lg font-bold shadow-xl shadow-indigo-500/20"
@@ -133,6 +150,15 @@ export default function ClubProfile() {
             <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
               {club.description || "We are a passionate group of students dedicated to building a vibrant community around our shared interests. Join us as we organize workshops, events, and meaningful interactions."}
             </div>
+            {clubTags.length > 0 && (
+              <div className="mt-8 flex flex-wrap gap-2">
+                {clubTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="space-y-6">
@@ -158,7 +184,7 @@ export default function ClubProfile() {
                       <h4 className="font-bold dark:text-white group-hover:text-indigo-600 transition-colors">{event.title}</h4>
                       <div className="flex gap-4 mt-1 text-xs text-gray-500">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {new Date(event.startsAt).toLocaleDateString()}</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {event.venue.name}</span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {event.venue?.name || event.location || 'TBA'}</span>
                       </div>
                    </div>
                    <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-all" />
@@ -231,7 +257,7 @@ export default function ClubProfile() {
                <h3 className="text-lg font-bold dark:text-white">Leadership Actions</h3>
                <div className="grid grid-cols-1 gap-3">
                  <Link to={`/clubs/${id}/governance`}>
-                   <Button className="w-full">Event Management</Button>
+                   <Button className="w-full">Club Governance</Button>
                  </Link>
                 <Link to={`/events/create?clubId=${id}`}>
                    <Button variant="outline" className="w-full">Create Event</Button>
@@ -301,7 +327,7 @@ function LeaderItem({ user, role }) {
     <div className="flex items-center justify-between group">
       <div className="flex items-center gap-3">
         <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-          {user.name?.charAt(0) || '?'}
+          {getInitials(user?.name)}
         </div>
         <div>
           <p className="text-sm font-bold dark:text-white">{user.name}</p>
