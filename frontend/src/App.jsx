@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SocketProvider } from './context/SocketContext';
+import { RealtimeSyncProvider } from './context/RealtimeSyncProvider';
 import { AppRoutes } from './routes/AppRoutes';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
@@ -24,8 +24,10 @@ function App() {
         <ThemeProvider>
           <AuthProvider>
             <SocketProvider>
-              <AppRoutes />
-              <Toaster position="top-right" />
+              <RealtimeSyncProvider>
+                <AppRoutes />
+                <Toaster position="top-right" />
+              </RealtimeSyncProvider>
             </SocketProvider>
           </AuthProvider>
         </ThemeProvider>
