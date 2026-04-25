@@ -107,7 +107,7 @@ const createClub = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newClub, "Club created successfully"));
 })
 
-//Student: request a new club
+//Faculty/HOD: request a new club
 const requestClub = asyncHandler(async (req, res) => {
     const { name, description, department, logoUrl, bannerUrl } = req.body;
     const tags = normalizeClubTags(req.body.tags);
@@ -118,12 +118,17 @@ const requestClub = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Club description is required");
     }
 
-    const existingClub = await Club.findOne({ name: name.trim() });
+    const normalizedName = name.trim();
+    const existingClub = await Club.findOne({ name: normalizedName });
     if(existingClub){
-        throw new ApiError(409, "A club with the same name already exists");
+        if (existingClub.status === 'rejected') {
+            await Club.findByIdAndDelete(existingClub._id);
+        } else {
+            throw new ApiError(409, "A club with the same name already exists");
+        }
     }
     const newClub = new Club({
-        name: name.trim(),
+        name: normalizedName,
         description: description.trim(),
         department: department ? department.trim() : null,
         logoUrl: logoUrl ? logoUrl.trim() : null,
@@ -231,30 +236,35 @@ const reviewClubRequest = asyncHandler(async (req, res) => {
     else{
         if(!rejectionReason || rejectionReason.trim() === ""){
             throw new ApiError(400, "Rejection reason is required when rejecting a club request");
+        }
     }
-    club.status = "rejected";
-    club.rejectionReason = rejectionReason.trim();
+
+    if (action === 'approve') {
+        await club.save();
     }
-    await club.save();
 
     if(club.requestedBy){
         if(action === "approve"){
             notificationService.notifyClubRequestApproved({
                 clubName: club.name,
-                recipients: [{ id: club.requestedBy, model: 'Student' }]
+                recipients: [{ id: club.requestedBy, model: 'Faculty' }]
             }).catch(err => console.error("Failed to send club approval notification", err));
         }
         else{
             notificationService.notifyClubRequestRejected({
                 clubName: club.name,
-                reason: club.rejectionReason.trim(),
-                recipients: [{ id: club.requestedBy, model: 'Student' }]
+                reason: rejectionReason.trim(),
+                recipients: [{ id: club.requestedBy, model: 'Faculty' }]
             }).catch(err => console.error("Failed to send club rejection notification", err));
         }
     }
 
+    if (action === 'reject') {
+        await Club.findByIdAndDelete(club._id);
+    }
+
     return res.status(200)
-    .json(new ApiResponse(200, club, `Club request ${action === "approve" ? "approved" : "rejected"} successfully`));
+    .json(new ApiResponse(200, null, `Club request ${action === "approve" ? "approved" : "rejected and removed"} successfully`));
 })
 
 //Faculty advisor: assign/revoke club president
@@ -561,7 +571,6 @@ const getAllClubs = asyncHandler(async (req, res)=> {
         .limit(Number(limit)),
         Club.countDocuments(filter),
     ])
-
     return res.status(200)
     .json(new ApiResponse(200, {
         clubs,
@@ -591,9 +600,9 @@ const getClub = asyncHandler(async (req, res) => {
     const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
     const isAdvisor = club.advisors.some(a => a._id.toString() === req.user._id.toString());
     const isMember = club.members.some(m => m._id.toString() === req.user._id.toString());
-    const isStudent = req.user.role === 'student';
+    const isStudentRole = ['student', 'club_president', 'club_vice_president'].includes(req.user.role);
 
-    if(!isAdmin && !isAdvisor && !isMember && !isStudent){
+    if(!isAdmin && !isAdvisor && !isMember && !isStudentRole){
         throw new ApiError(403, "You do not have permission to view this club");
     }
 
@@ -604,7 +613,7 @@ const getClub = asyncHandler(async (req, res) => {
 //Admin: get pending club requests
 const getPendingClubs = asyncHandler(async (req, res) => {
     const clubs = await Club.find({ status: "pending" })
-    .populate('requestedBy', 'name email rollNo department')
+    .populate('requestedBy', 'name email employeeId department')
     .sort({ createdAt: -1 });
 
     return res.status(200)
