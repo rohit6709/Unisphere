@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/cn';
 import { requestClub, uploadClubAssets } from '@/services/clubService';
 import { getInterestCategories } from '@/services/onboardingService';
+import { useAuth } from '@/context/AuthContext';
+import { isFacultyRole } from '@/utils/roles';
 
 const DEPARTMENTS = [
   'Computer Science',
@@ -32,6 +34,7 @@ const humanizeTag = (tag) => tag.replace(/_/g, ' ');
 
 export default function RequestClubPage() {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [department, setDepartment] = useState('General');
@@ -61,7 +64,7 @@ export default function RequestClubPage() {
     mutationFn: (payload) => requestClub(payload),
     onSuccess: () => {
       toast.success('Club request submitted successfully');
-      navigate('/my-clubs');
+      navigate(isFacultyRole(role) ? '/faculty/clubs' : '/clubs');
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || error?.message || 'Failed to submit club request');
@@ -331,7 +334,7 @@ export default function RequestClubPage() {
             <Button type="submit" isLoading={requestMutation.isPending}>
               Submit Request
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate('/my-clubs')}>
+            <Button type="button" variant="outline" onClick={() => navigate(isFacultyRole(role) ? '/faculty/clubs' : '/clubs')}>
               Cancel
             </Button>
           </div>
