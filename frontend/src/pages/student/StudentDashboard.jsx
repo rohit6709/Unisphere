@@ -9,6 +9,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { getStudentDashboard } from '@/services/dashboardService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function StudentDashboard() {
   useDocumentTitle('Dashboard');
@@ -147,7 +148,7 @@ export default function StudentDashboard() {
                 {clubs.slice(0, 4).map(club => (
                   <Link key={club._id} to={`/clubs/${club._id}`} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4 flex items-center gap-4 hover:bg-[var(--bg-card-alt)] transition-colors">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary)] to-purple-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                      {club.name.charAt(0)}
+                      {getInitials(club.name)}
                     </div>
                     <div>
                       <h3 className="font-bold text-[var(--text-h)] line-clamp-1">{club.name}</h3>
@@ -178,7 +179,7 @@ export default function StudentDashboard() {
                 activeChats.slice(0, 5).map(chat => (
                   <Link to="/messages" key={chat.roomId} className="flex gap-3 items-center group">
                     <div className="w-10 h-10 rounded-full bg-[var(--bg-card-alt)] flex items-center justify-center text-[var(--text-h)] font-bold group-hover:bg-[var(--primary)] group-hover:text-white transition-colors shrink-0">
-                      {chat.name.charAt(0)}
+                      {getInitials(chat.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-sm font-semibold text-[var(--text-h)] truncate">{chat.name}</h4>
