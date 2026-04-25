@@ -1,6 +1,8 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { getDashboardPath } from '@/utils/roleRedirect';
+import { isStudentRole } from '@/utils/roles';
 
 export const ProtectedRoute = ({ allowedRoles }) => {
   const { user, role, isAuthenticated, isLoading } = useAuth();
@@ -22,13 +24,11 @@ export const ProtectedRoute = ({ allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {
-    // Superadmin shares the admin dashboard
-    const dashRole = role === 'superadmin' ? 'admin' : role;
-    return <Navigate to={`/dashboard/${dashRole}`} replace />;
+    return <Navigate to={getDashboardPath(role)} replace />;
   }
 
-  // Student specific edge cases (first login & onboarding)
-  if (role === 'student') {
+  // Student-specific edge cases also apply to club leadership roles.
+  if (isStudentRole(role)) {
     if (user.isFirstLogin && location.pathname !== '/force-change-password') {
       return <Navigate to="/force-change-password" replace />;
     }
