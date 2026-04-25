@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { getDashboardPath } from '@/utils/roleRedirect';
 
 /**
  * RoleGuard — Wraps routes that should only be accessible by specific roles.
@@ -15,13 +16,6 @@ import { useAuth } from '@/context/AuthContext';
 export const RoleGuard = ({ allowedRoles = [] }) => {
   const { role } = useAuth();
   const location = useLocation();
-
-  const getDashboardPath = (currentRole) => {
-    if (currentRole === 'superadmin') return '/dashboard/admin';
-    if (currentRole === 'hod') return '/dashboard/faculty';
-    if (currentRole === 'club_president' || currentRole === 'club_vice_president') return '/dashboard/student';
-    return `/dashboard/${currentRole}`;
-  };
 
   // Normalize roles: 'superadmin' inherits all 'admin' permissions unless specified
   const effectiveAllowedRoles = allowedRoles.includes('admin')
