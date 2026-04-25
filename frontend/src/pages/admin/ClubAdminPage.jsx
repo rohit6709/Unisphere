@@ -95,6 +95,8 @@ export default function ClubAdminPage() {
   }, [clubDetail]);
 
   const clubs = clubsData?.clubs || [];
+
+  console.log('Club Detail:', clubs);
   const clubMembers = memberData?.members || clubDetail?.members || [];
   const faculty = facultyData?.faculty || [];
   const students = studentData?.students || [];
