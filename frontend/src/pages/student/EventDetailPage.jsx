@@ -27,6 +27,7 @@ import FeedbackSection from '@/components/events/FeedbackSection';
 import { cn } from '@/utils/cn';
 import { getPublicEvent } from '@/services/eventService';
 import { getMyRegistrationStatus, registerForEvent } from '@/services/registrationService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function EventDetailPage() {
   const { eventId } = useParams();
@@ -141,7 +142,7 @@ export default function EventDetailPage() {
                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Organized By</h3>
                      <Link to={`/clubs/${event.club?._id}`} className="flex items-center gap-4 group">
                         <div className="h-12 w-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl">
-                           {event.club?.name.charAt(0)}
+                           {getInitials(event.club?.name)}
                         </div>
                         <div>
                            <p className="font-black text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors">{event.club?.name}</p>
@@ -262,3 +263,4 @@ function EventErrorState() {
     </div>
   );
 }
+
