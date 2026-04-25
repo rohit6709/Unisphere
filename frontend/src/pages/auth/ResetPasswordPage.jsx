@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,7 @@ const resetByRole = {
 };
 
 export default function ResetPasswordPage() {
+	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const { token: tokenParam } = useParams();
 	const role = searchParams.get('role') || 'student';
@@ -26,7 +27,13 @@ export default function ResetPasswordPage() {
 
 	const mutation = useMutation({
 		mutationFn: () => resetByRole[role](token, form),
-		onSuccess: () => toast.success('Password reset successful. You can log in now.'),
+		onSuccess: () => {
+			toast.success('Password reset successful. You can log in now.');
+			setForm({ newPassword: '', confirmPassword: '' });
+			setTimeout(() => {
+				navigate('/login');
+			}, 1500);
+		},
 		onError: (error) => toast.error(error?.response?.data?.message || error?.message || 'Failed to reset password'),
 	});
 
