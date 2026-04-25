@@ -31,7 +31,9 @@ const loginAdmin = asyncHandler( async (req,res)=> {
         throw new ApiError(400, 'Email and password is required');
     }
 
-    const admin = await Admin.findOne({email: email});
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const admin = await Admin.findOne({email: normalizedEmail});
     if(!admin){
         throw new ApiError(404, 'Admin does not exist');
     }
