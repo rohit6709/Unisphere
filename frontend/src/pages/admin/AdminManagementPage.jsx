@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/utils/cn';
+import { getInitials } from '@/utils/getInitials';
 
 export default function AdminManagementPage() {
   useDocumentTitle('Admin Management | Unisphere');
@@ -143,7 +144,7 @@ export default function AdminManagementPage() {
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center font-bold text-white shadow-lg shadow-red-500/10">
-                          {admin.name.charAt(0)}
+                          {getInitials(admin?.name)}
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 dark:text-white leading-tight">{admin.name}</p>
@@ -331,3 +332,4 @@ function AdminCreationModal({ onClose }) {
     </div>
   );
 }
+
