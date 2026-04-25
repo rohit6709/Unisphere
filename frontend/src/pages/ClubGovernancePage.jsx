@@ -16,6 +16,13 @@ import { api } from '@/api/axios';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { SEO } from '@/components/SEO';
+import { getInitials } from '@/utils/getInitials';
+
+const normalizeMembers = (payload) => {
+   if (Array.isArray(payload)) return payload;
+   if (Array.isArray(payload?.members)) return payload.members;
+   return [];
+};
 
 export default function ClubGovernancePage() {
   const { id } = useParams();
@@ -61,10 +68,13 @@ export default function ClubGovernancePage() {
     onError: (err) => toast.error(err.response?.data?.message || 'Removal failed'),
   });
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+   const memberList = normalizeMembers(members);
+   const filteredMembers = memberList.filter((member) => {
+      const name = (member?.name || '').toLowerCase();
+      const rollNo = (member?.rollNo || '').toLowerCase();
+      const query = searchTerm.toLowerCase();
+      return name.includes(query) || rollNo.includes(query);
+   });
 
   if (clubLoading || membersLoading) return <div className="p-20 text-center">Loading Governance Hub...</div>;
 
@@ -131,7 +141,7 @@ export default function ClubGovernancePage() {
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center font-black text-indigo-600">
-                                   {member.name.charAt(0)}
+                                   {getInitials(member?.name)}
                                 </div>
                                 <div>
                                    <p className="text-sm font-black text-gray-900 dark:text-white">{member.name}</p>
@@ -186,14 +196,14 @@ export default function ClubGovernancePage() {
                <div className="space-y-6">
                   <div className="flex justify-between items-center">
                      <span className="text-indigo-100 text-sm font-bold uppercase tracking-widest">Total Members</span>
-                     <span className="text-3xl font-black">{members.length}</span>
+                     <span className="text-3xl font-black">{memberList.length}</span>
                   </div>
                   <div className="h-[1px] bg-white/10" />
                   <div className="space-y-4">
                      <div>
                         <p className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mb-2">President</p>
                         <div className="flex items-center gap-3">
-                           <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center font-bold">{club.president?.name.charAt(0)}</div>
+                           <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center font-bold">{getInitials(club.president?.name)}</div>
                            <span className="text-sm font-bold">{club.president?.name}</span>
                         </div>
                      </div>
@@ -201,7 +211,7 @@ export default function ClubGovernancePage() {
                         <p className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mb-2">Vice President</p>
                         <div className="flex items-center gap-3">
                            <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center font-bold">
-                              {club.vicePresident ? club.vicePresident.name.charAt(0) : '?'}
+                              {getInitials(club.vicePresident?.name)}
                            </div>
                            <span className="text-sm font-bold">{club.vicePresident ? club.vicePresident.name : 'Unassigned'}</span>
                         </div>
