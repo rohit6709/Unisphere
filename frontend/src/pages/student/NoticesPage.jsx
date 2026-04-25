@@ -2,27 +2,28 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   BellRing, 
-  Search, 
   Megaphone, 
   AlertTriangle, 
   Info, 
   Clock, 
   User,
-  Filter,
   ArrowDownCircle,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/cn';
-import { getMyNotices } from '@/services/noticeService';
+import { getMyNotices, getNotice } from '@/services/noticeService';
 
 export default function NoticesPage() {
   useDocumentTitle('Official Notices | Unisphere');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [selectedNoticeId, setSelectedNoticeId] = useState(null);
 
   const { data: noticesData, isLoading } = useQuery({
     queryKey: ['my-notices', priorityFilter],
@@ -30,6 +31,12 @@ export default function NoticesPage() {
       const response = await getMyNotices({ priority: priorityFilter || undefined });
       return response?.notices || response || [];
     },
+  });
+
+  const { data: selectedNotice, isLoading: isNoticeLoading } = useQuery({
+    queryKey: ['notice', selectedNoticeId],
+    queryFn: () => getNotice(selectedNoticeId),
+    enabled: Boolean(selectedNoticeId),
   });
 
   const getPriorityStyles = (priority) => {
@@ -105,6 +112,15 @@ export default function NoticesPage() {
                    "relative overflow-hidden rounded-[2.5rem] p-8 border shadow-sm transition-all hover:shadow-md",
                    getPriorityStyles(notice.priority)
                  )}
+                 role="button"
+                 tabIndex={0}
+                 onClick={() => setSelectedNoticeId(notice._id)}
+                 onKeyDown={(event) => {
+                   if (event.key === 'Enter' || event.key === ' ') {
+                     event.preventDefault();
+                     setSelectedNoticeId(notice._id);
+                   }
+                 }}
                >
                  <div className="flex flex-col sm:flex-row gap-6">
                    <div className={cn(
@@ -166,6 +182,52 @@ export default function NoticesPage() {
            <ArrowDownCircle className="mr-2 h-5 w-5" /> Load Previous Notices
         </Button>
       </div>
+
+      <Modal open={Boolean(selectedNoticeId)} onClose={() => setSelectedNoticeId(null)} title="Notice Details">
+        {isNoticeLoading ? (
+          <div className="space-y-3 py-4">
+            <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="h-20 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          </div>
+        ) : selectedNotice ? (
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600">
+                  {selectedNotice.priority || 'notice'}
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-white">{selectedNotice.title}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedNoticeId(null)}
+                className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500">
+              Posted {selectedNotice.createdAt ? new Date(selectedNotice.createdAt).toLocaleString() : 'recently'}
+            </p>
+            <div className="whitespace-pre-wrap text-sm leading-7 text-gray-700 dark:text-gray-300">
+              {selectedNotice.content}
+            </div>
+            {selectedNotice.attachment?.url && (
+              <a
+                href={selectedNotice.attachment.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+              >
+                <FileText className="h-4 w-4" />
+                {selectedNotice.attachment.filename || 'Open attachment'}
+              </a>
+            )}
+          </div>
+        ) : (
+          <p className="py-4 text-sm text-gray-500">Unable to load this notice right now.</p>
+        )}
+      </Modal>
     </div>
   );
 }
