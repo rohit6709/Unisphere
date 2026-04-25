@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/utils/cn';
 import { getAllClubs } from '@/services/clubService';
 import { getPublicEvents } from '@/services/eventService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function DiscoveryPage() {
   useDocumentTitle('Discover Unisphere');
@@ -267,7 +268,7 @@ function ClubCompactCard({ club }) {
           <Building2 className="h-32 w-32 -rotate-12" />
        </div>
        <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-indigo-500/20 mb-6">
-          {club.name.charAt(0)}
+          {getInitials(club.name)}
        </div>
        <h4 className="text-xl font-black text-gray-900 dark:text-white mb-2 leading-tight">{club.name}</h4>
        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-2 mb-8">{club.description}</p>
