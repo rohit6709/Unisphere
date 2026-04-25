@@ -43,12 +43,12 @@ router.route('/:clubId/members').get(verifyJWT, verifyRole('admin', 'superadmin'
 // Faculty + president + admin
 router.route('/:clubId/remove-member/:rollNo').delete(verifyJWT, verifyRole('admin', 'superadmin', 'faculty', 'hod', 'club_president'), removeMember);
 
-//Student
-router.route('/request-club').post(verifyJWT, verifyRole('student'), requestClub);
-router.route('/my-clubs').get(verifyJWT, verifyRole('student'), getMyClubs);
+// Faculty + HOD
+router.route('/request-club').post(verifyJWT, verifyRole('faculty', 'hod'), requestClub);
+router.route('/my-clubs').get(verifyJWT, verifyRole('student', 'club_president', 'club_vice_president'), getMyClubs);
 router.route('/my-advised-clubs').get(verifyJWT, verifyRole('faculty', 'hod'), getMyAdvisedClubs);
-router.route('/join-club/:clubId').post(verifyJWT, verifyRole('student'), joinClub);
-router.route('/leave-club/:clubId').post(verifyJWT, verifyRole('student'), leaveClub);
+router.route('/join-club/:clubId').post(verifyJWT, verifyRole('student', 'club_president', 'club_vice_president'), joinClub);
+router.route('/leave-club/:clubId').post(verifyJWT, verifyRole('student', 'club_president', 'club_vice_president'), leaveClub);
 
 // Faculty + student
 router.route('/get-club/:clubId').get(verifyJWT, getClub);
