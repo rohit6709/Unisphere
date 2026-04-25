@@ -24,6 +24,7 @@ import { SmartImage } from '@/components/ui/SmartImage';
 import { SEO } from '@/components/SEO';
 import { getClubById, joinClub, leaveClub } from '@/services/clubService';
 import { getClubEvents } from '@/services/eventService';
+import { getInitials } from '@/utils/getInitials';
 
 export default function ClubDetailPage() {
   const { clubId } = useParams();
@@ -73,15 +74,15 @@ export default function ClubDetailPage() {
       />
 
       {/* Profile Header */}
-      <div className="relative h-[45vh] min-h-[350px] w-full">
-         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600" />
+      <div className="relative h-[45vh] min-h-87.5 w-full">
+         <div className="absolute inset-0 bg-linear-to-br from-indigo-600 via-violet-600 to-fuchsia-600" />
          <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
          
          <div className="absolute inset-0 flex items-end">
             <div className="max-w-7xl mx-auto px-4 w-full pb-10">
                <div className="flex flex-col md:flex-row items-end gap-8">
                   <div className="h-40 w-40 rounded-[2.5rem] bg-white dark:bg-gray-900 border-8 border-white dark:border-gray-900 shadow-2xl flex items-center justify-center text-4xl font-black text-indigo-600 shrink-0">
-                     {club.name.charAt(0)}
+                     {getInitials(club.name)}
                   </div>
                   <div className="flex-1 space-y-4 mb-4">
                      <div className="flex flex-wrap gap-2">
@@ -161,7 +162,7 @@ export default function ClubDetailPage() {
                   {clubEvents?.length > 0 ? (
                     clubEvents.map(event => (
                       <Link key={event._id} to={`/events/${event._id}`} className="group">
-                        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 rounded-[2rem] hover:shadow-2xl transition-all h-full">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 rounded-4xl hover:shadow-2xl transition-all h-full">
                            <SmartImage src={event.posterUrl} className="h-40 rounded-2xl mb-4" />
                            <h4 className="text-lg font-black text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">{event.title}</h4>
                            <div className="flex items-center gap-4 text-xs font-bold text-gray-400">
@@ -172,7 +173,7 @@ export default function ClubDetailPage() {
                       </Link>
                     ))
                   ) : (
-                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-gray-900/30 rounded-[2rem] border-2 border-dashed border-gray-200 dark:border-gray-800">
+                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-gray-900/30 rounded-4xl border-2 border-dashed border-gray-200 dark:border-gray-800">
                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No scheduled events</p>
                     </div>
                   )}
@@ -232,7 +233,7 @@ function LeaderItem({ label, user }) {
    return (
       <div className="flex items-center gap-4 group">
          <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-black text-gray-400 shrink-0">
-            {user.name?.charAt(0)}
+            {getInitials(user?.name)}
          </div>
          <div className="min-w-0">
             {label && <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-0.5">{label}</p>}
@@ -271,3 +272,5 @@ function ClubErrorState() {
       </div>
    )
 }
+
+
