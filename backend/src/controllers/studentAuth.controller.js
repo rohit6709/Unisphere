@@ -31,7 +31,9 @@ const loginUser = asyncHandler( async (req, res) => {
         throw new ApiError(400, 'Email and password is required');
     }
 
-    const user = await Student.findOne({email: email});
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await Student.findOne({email: normalizedEmail});
     if(!user){
         throw new ApiError(404, 'User does not exist');
     }
