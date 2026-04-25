@@ -19,6 +19,7 @@ import { useThemeContext } from '@/context/ThemeContext';
 import NotificationBell from './NotificationBell';
 import { Button } from '@/components/ui/Button';
 import { getDashboardPath, getProfilePath } from '@/utils/roleRedirect';
+import { getInitials } from '@/utils/getInitials';
 
 export default function Navbar() {
   const { user, role, logout } = useAuth();
@@ -84,7 +85,7 @@ export default function Navbar() {
                 </div>
                 <div className="group relative">
                    <div className="h-12 w-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-black text-indigo-600 cursor-pointer overflow-hidden border-2 border-transparent hover:border-indigo-600 transition-all">
-                      {user.profilePicture ? <img src={user.profilePicture} className="h-full w-full object-cover" /> : user.name.charAt(0)}
+                     {user.profilePicture ? <img src={user.profilePicture} className="h-full w-full object-cover" /> : getInitials(user?.name)}
                    </div>
                    
                    {/* Dropdown */}
