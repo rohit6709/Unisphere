@@ -99,10 +99,19 @@ const fetchPendingEventsForFilter = async (filter, skip, limit) => {
     try {
         return await baseQuery.clone().populate("submittedBy", "name rollNo employeeId");
     } catch (error) {
-        // Legacy records can have missing/invalid submittedByModel, which breaks refPath populate.
-        // Fallback keeps approval queue functional instead of throwing 500.
-        console.error("[EVENT_PENDING] submittedBy populate failed, falling back without submitter details:", error?.message);
-        return await baseQuery;
+        // Legacy records can have missing/invalid submittedByModel or broken club refs.
+        // Fall back in stages so one bad document does not take down the whole approval queue.
+        console.error("[EVENT_PENDING] populate failed, falling back without submitter details:", error?.message);
+
+        try {
+            return await Event.find(filter)
+                .sort({ createdAt: 1 })
+                .skip(skip)
+                .limit(Number(limit));
+        } catch (fallbackError) {
+            console.error("[EVENT_PENDING] plain query fallback failed:", fallbackError?.message);
+            return [];
+        }
     }
 };
 
@@ -644,10 +653,13 @@ const getAdviseePendingEvents = asyncHandler(async (req, res) => {
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const [events, total] = await Promise.all([
+    const [eventsResult, totalResult] = await Promise.allSettled([
         fetchPendingEventsForFilter(filter, skip, limit),
         Event.countDocuments(filter)
     ])
+
+    const events = eventsResult.status === "fulfilled" ? eventsResult.value : [];
+    const total = totalResult.status === "fulfilled" ? totalResult.value : 0;
 
     return res.status(200)
         .json(new ApiResponse(200, {events, pagination: {
@@ -893,7 +905,7 @@ const deleteEvent = asyncHandler(async (req, res) => {
 
 const getGlobalPendingRequests = asyncHandler(async (req, res) => {
     const [clubs, events] = await Promise.all([
-        Club.find({ status: "pending" }).populate("requestedBy", "name rollNo"),
+        Club.find({ status: "pending" }).populate("requestedBy", "name employeeId"),
         Event.find({ status: "pending_approval" }).populate("club", "name").populate("submittedBy", "name rollNo")
     ]);
 
