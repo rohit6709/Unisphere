@@ -8,6 +8,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitSystemMessage } from '../sockets/chat.socket.js';
 import { notificationService } from '../services/notificationService.js';
+import { clearCache } from '../middlewares/cache.middleware.js';
 
 const validateObjectId = (id, label = "ID") => {
     if(!mongoose.Types.ObjectId.isValid(id)){
@@ -115,6 +116,10 @@ const registerForEvent = asyncHandler(async (req, res) => {
         data: { eventId: eventId.toString(), clubId: event.club._id.toString() }
     }).catch(err => console.error("Failed to send registration confirmation notification", err));
 
+    // Invalidate cached event detail/list so "Spots Available" refreshes immediately
+    clearCache(`/events/public/${eventId}`);
+    clearCache('/events/public');
+
     return res.status(201)
         .json(new ApiResponse(201, { registrationId: registration._id, eventId, spotsRemaining: Math.max(0, spotsRemaining), groupJoined: !!group }, "Successfully registered for event"));
 })
@@ -151,6 +156,10 @@ const unregisterFromEvent = asyncHandler(async (req, res) => {
         { event: eventId, status: "active" },
         { $pull: { members: { user: req.user._id } } }
     )
+
+    // Invalidate cached event detail/list so "Spots Available" refreshes immediately
+    clearCache(`/events/public/${eventId}`);
+    clearCache('/events/public');
 
     return res.status(200)
         .json(new ApiResponse(200, {}, "Successfully unregistered from event"));
