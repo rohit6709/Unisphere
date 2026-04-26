@@ -156,7 +156,7 @@ const forgotAdminPassword = asyncHandler( async (req, res) => {
     admin.passwordResetExpiry = Date.now() + 15 * 60 * 1000;
     await admin.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/admin/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}?role=admin`;
 
     try{
         await sendPasswordResetMail({
