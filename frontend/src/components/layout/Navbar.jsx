@@ -82,7 +82,7 @@ export default function Navbar() {
                 <div className="text-right">
                    <p className="text-xs font-black text-gray-900 dark:text-white leading-none">{user.name}</p>
                    <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-1">{role}</p>
-                </div>
+              </div>
                 <div className="group relative">
                    <div className="h-12 w-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-black text-indigo-600 cursor-pointer overflow-hidden border-2 border-transparent hover:border-indigo-600 transition-all">
                      {user.profilePicture ? <img src={user.profilePicture} className="h-full w-full object-cover" /> : getInitials(user?.name)}
