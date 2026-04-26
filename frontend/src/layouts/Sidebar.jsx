@@ -7,7 +7,7 @@ import {
   GraduationCap, CalendarClock, BellRing, UserCircle, Trophy, Building2,
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-
+import { LogoMarkIcon } from '../components/icons';
 import { cn } from '@/utils/cn';
 import { useAuth } from '@/context/AuthContext';
 
@@ -290,8 +290,9 @@ export const Sidebar = ({ isOpen, setOpen }) => {
       >
         {/* Logo Header */}
         <div className="flex h-16 shrink-0 items-center gap-2.5 px-5 border-b border-(--border)">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-(--primary) shadow-sm">
-            <LayoutDashboard className="h-4 w-4 text-white" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ffffff] dark:bg-[#171a1c] ">
+            {/* <LayoutDashboard className="h-4 w-4 text-white" /> */}
+            <LogoMarkIcon size={32} />
           </div>
           <span className="text-xl font-heading font-extrabold text-(--text-h) tracking-tight">
             Unisphere
