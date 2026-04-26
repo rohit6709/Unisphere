@@ -42,7 +42,8 @@ export default function EventProfile() {
   });
 
   const isRegistered = Boolean(registrationStatus);
-  const isFull = event?.maxParticipants ? (event?.participants?.length || 0) >= event.maxParticipants : false;
+  const registeredCount = event?.registeredCount ?? 0;
+  const isFull = event?.maxParticipants ? registeredCount >= event.maxParticipants : false;
   const deadlineDate = event?.registrationDeadline ? new Date(event.registrationDeadline) : null;
   const now = new Date();
   const isPastDeadline = deadlineDate ? now > deadlineDate : false;
@@ -183,6 +184,16 @@ export default function EventProfile() {
                 </Button>
               )}
 
+              {isStudentRole(role) && isRegistered && !hasStarted && (
+                <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 px-4 py-3">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">You're registered</p>
+                    <Link to="/my-registrations" className="text-xs text-emerald-600 hover:underline">View in My Registrations</Link>
+                  </div>
+                </div>
+              )}
+
               {!user && (
                  <Link to="/login" className="inline-flex w-full items-center justify-center rounded-2xl h-14 px-6 bg-indigo-600 text-white hover:bg-blue-700 font-bold shadow-lg shadow-indigo-500/20">
                    Login to Register
@@ -202,7 +213,7 @@ export default function EventProfile() {
                   <span>Spots Available</span>
                   <span className="font-bold text-gray-900 dark:text-white">
                     {event.maxParticipants
-                      ? `${Math.max(0, event.maxParticipants - (event.participants?.length || 0))} / ${event.maxParticipants}`
+                      ? `${Math.max(0, event.maxParticipants - registeredCount)} / ${event.maxParticipants}`
                       : 'Unlimited'}
                   </span>
                 </div>
