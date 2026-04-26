@@ -165,7 +165,7 @@ const forgotPassword = asyncHandler( async (req, res)=> {
     faculty.passwordResetExpiry = Date.now() + 15 * 60 * 1000;
     await faculty.save({validateBeforeSave: false});
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}?role=faculty`;
 
     try{
         await sendPasswordResetMail({
