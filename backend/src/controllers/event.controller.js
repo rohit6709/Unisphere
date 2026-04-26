@@ -10,6 +10,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { scheduleGroupDissolution, cancelGroupDissolution, scheduleGroupClosingWarning, cancelGroupClosingWarning } from '../queues/queue.js';
 import{ notificationService } from '../services/notificationService.js';
+import { clearCache } from '../middlewares/cache.middleware.js';
 
 const createLog = async ({
     eventId,
@@ -759,7 +760,7 @@ const getAllEvents = asyncHandler(async (req, res) => {
 
 //Student see open events + club_only events for clubs they belong to
 const getPublicEvents = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, eventType, search, featured } = req.query;
+    const { page = 1, limit = 10, eventType, search, featured, clubId } = req.query;
     
     const studentClubs = await Club.find({ members: req.user._id }).select("_id");
     const clubIds = studentClubs.map(c => c._id);
@@ -770,6 +771,11 @@ const getPublicEvents = asyncHandler(async (req, res) => {
             { visibility: "open" },
             { visibility: "club_only", club: { $in: clubIds } }
         ]
+    }
+
+    // Scope to a single club when requested (e.g. club profile "Upcoming Events" panel)
+    if (clubId) {
+        filter.club = clubId;
     }
 
     if(eventType){
@@ -852,7 +858,21 @@ const getPublicEvent = asyncHandler(async (req, res) => {
         }
     }
 
-    return res.status(200).json(new ApiResponse(200, event, "Event retrieved successfully"));
+    // Live registration count so the frontend can show accurate "Spots Available"
+    const registeredCount = await Registration.countDocuments({
+        event: eventId,
+        status: "registered"
+    });
+
+    const eventResponse = {
+        ...event.toObject(),
+        registeredCount,
+        spotsRemaining: event.maxParticipants
+            ? Math.max(0, event.maxParticipants - registeredCount)
+            : null,
+    };
+
+    return res.status(200).json(new ApiResponse(200, eventResponse, "Event retrieved successfully"));
 });
 
 const toggleFeatured = asyncHandler(async (req, res) => {
