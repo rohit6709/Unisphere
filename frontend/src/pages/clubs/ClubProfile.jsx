@@ -32,10 +32,23 @@ export default function ClubProfile() {
   const { data: club, isLoading, isError } = useQuery({
     queryKey: ['club', id],
     queryFn: async () => {
+      // Authenticated users get the fully-populated club (members, createdAt, etc.)
+      // via getClubById. For anonymous/public visits we fall back to the profile
+      // endpoint which wraps data as { club, upcomingEvents, personalContext } and
+      // exposes only memberCount (no members array).
       try {
-        return await getClubProfile(id);
+        return await getClubById(id);
       } catch {
-        return getClubById(id);
+        const profile = await getClubProfile(id);
+        if (profile && profile.club) {
+          return {
+            ...profile.club,
+            members: profile.club.members || [],
+            upcomingEvents: profile.upcomingEvents,
+            personalContext: profile.personalContext,
+          };
+        }
+        return profile;
       }
     },
   });
@@ -58,7 +71,9 @@ export default function ClubProfile() {
     enabled: !!club,
   });
 
-  const isMember = club?.members?.some((m) => m._id === user?._id);
+  const isMember =
+    club?.personalContext?.isJoined ||
+    club?.members?.some((m) => m._id === user?._id);
   const isPresident = club?.president?._id === user?._id;
   const isVicePresident = club?.vicePresident?._id === user?._id;
   const isAdvisor = club?.advisors?.some((advisor) => advisor._id === user?._id);
@@ -120,8 +135,8 @@ export default function ClubProfile() {
               </div>
               <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">{club.name}</h1>
               <div className="flex items-center justify-center sm:justify-start gap-4 text-gray-300 text-sm">
-                <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {club.members?.length || 0} Members</span>
-                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> Founded {new Date(club.createdAt).getFullYear()}</span>
+                <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {club.memberCount ?? club.members?.length ?? 0} Members</span>
+                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> Founded {club.createdAt ? new Date(club.createdAt).getFullYear() : '—'}</span>
               </div>
             </div>
           </div>
@@ -204,7 +219,7 @@ export default function ClubProfile() {
                 Members
               </h2>
               <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                {club.members?.length || 0} total
+                {club.memberCount ?? club.members?.length ?? 0} total
               </span>
             </div>
 
