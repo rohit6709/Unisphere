@@ -7,7 +7,6 @@ import {
   ShieldCheck, 
   Download, 
   Search, 
-  Mail,
   Filter
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -217,20 +216,6 @@ export default function ClubGovernancePage() {
                         </div>
                      </div>
                   </div>
-               </div>
-            </section>
-
-            <section className="bg-white dark:bg-gray-950 rounded-[2.5rem] p-8 border border-gray-50 dark:border-gray-900">
-               <h3 className="text-lg font-black text-gray-900 dark:text-white mb-6">Quick Actions</h3>
-               <div className="grid grid-cols-2 gap-4">
-                  <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-gray-50 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all border border-transparent hover:border-indigo-100">
-                     <Mail className="h-6 w-6 text-indigo-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Blast Mail</span>
-                  </button>
-                  <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-gray-50 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all border border-transparent hover:border-indigo-100">
-                     <Users className="h-6 w-6 text-indigo-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Permissions</span>
-                  </button>
                </div>
             </section>
          </div>
