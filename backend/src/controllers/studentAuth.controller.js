@@ -159,7 +159,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}?role=student`;
 
     try{
         await sendPasswordResetMail({
