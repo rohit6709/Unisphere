@@ -1,306 +1,396 @@
 import { Link } from 'react-router-dom';
-import { LogoMarkIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, TeamIcon, ChatBubbleIcon, BellIcon, GridIcon } from '../components/icons';
-import { useThemeContext } from '../context/ThemeContext.jsx';
+import {
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  BellIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  LogoMarkIcon,
+  MoonIcon,
+  SunIcon,
+  TeamIcon,
+  XCircleIcon,
+} from '../components/icons';
+import { useThemeContext } from '../context/ThemeContext';
 
-const PAGE_CONTAINER = 'mx-auto w-full max-w-[1360px] px-5 sm:px-6 lg:px-8';
+const PAGE_CONTAINER = 'mx-auto w-full max-w-[1320px] px-5 sm:px-6 lg:px-10';
 
 const navLinks = [
-	{ href: '#about', label: 'About' },
-	{ href: '#problems', label: 'Problems Solved' },
-	{ href: '#features', label: 'Features' },
+  { href: '#about', label: 'About' },
+  { href: '#problems', label: 'Problems' },
+  { href: '#features', label: 'Features' },
 ];
 
 const problemPoints = [
-	{
-		title: 'Scattered Communication',
-		description: 'Important updates are spread across chats, emails, and notice boards.',
-	},
-	{
-		title: 'Manual Processes',
-		description: 'Club operations and approvals are handled with repetitive manual work.',
-	},
-	{
-		title: 'No Single Source of Truth',
-		description: 'Students, faculty, and admins do not have one reliable platform to coordinate.',
-	},
+  {
+    tag: '01',
+    title: 'Poor Club Discovery',
+    description:
+      'Freshers have no structured way to find clubs matching their interests. They rely on orientation fairs or word of mouth — and miss most of what campus has to offer.',
+  },
+  {
+    tag: '02',
+    title: 'Missed Events',
+    description:
+      'Students learn about events after they happen. No centralized, real-time event feed exists — critical updates are buried in WhatsApp groups and printed flyers.',
+  },
+  {
+    tag: '03',
+    title: 'Registration Friction',
+    description:
+      'Event sign-ups involve manual forms, spreadsheets, or in-person queues — creating friction, lost data, and drop-offs before students even show up.',
+  },
+  {
+    tag: '04',
+    title: 'Communication Chaos',
+    description:
+      'Post-event communication lives in WhatsApp groups that never get cleaned up. Dead groups, missed announcements, and notification overload for everyone.',
+  },
 ];
 
 const featureCards = [
-	{
-		title: 'Smart Club Management',
-		description: 'Manage members, events, and approvals with clear and structured workflows.',
-		icon: <TeamIcon />,
-		iconClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-	},
-	{
-		title: 'Real-time Chat',
-		description: 'Fast communication between students, club leaders, and faculty mentors.',
-		icon: <ChatBubbleIcon />,
-		iconClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
-	},
-	{
-		title: 'Timely Notifications',
-		description: 'Get alerts for announcements, approvals, schedules, and important changes.',
-		icon: <BellIcon />,
-		iconClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-	},
-	{
-		title: 'Admin Control Panel',
-		description: 'Centralized visibility and governance for departments and campus administrators.',
-		icon: <GridIcon />,
-		iconClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-	},
+  {
+    eyebrow: 'Discovery',
+    title: 'Interest-Driven Club Feed',
+    description:
+      'Students browse clubs by category and interest tags. No more orientation fairs or word-of-mouth — find your community in minutes, not months.',
+    Icon: TeamIcon,
+    accent: 'sage',
+  },
+  {
+    eyebrow: 'Events',
+    title: 'Unified Event Calendar',
+    description:
+      'One real-time feed for every fest, workshop, and club meeting on campus. Register in one tap — no forms, no spreadsheets, no queues.',
+    Icon: CalendarIcon,
+    accent: 'citron',
+  },
+  {
+    eyebrow: 'Approvals',
+    title: 'Structured Approval Flows',
+    description:
+      'Club leaders propose events, faculty advisors approve, admins publish. Every step tracked and transparent — no more follow-up chasing.',
+    Icon: CheckCircleIcon,
+    accent: 'ink',
+  },
 ];
 
-function Navbar() {
-	return (
-		<header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/90">
-			<nav className={`${PAGE_CONTAINER} flex h-20 items-center justify-between`}>
-				<Link to="/" className="flex items-center gap-2.5 no-underline">
-					<LogoMarkIcon />
-					<span className="font-heading text-[22px] font-extrabold tracking-[-0.03em] text-slate-900 dark:text-slate-100">
-						Unisphere
-					</span>
-				</Link>
+const accentBg = (a) => ({
+    sage: 'bg-sage text-sage-foreground',
+    citron: 'bg-accent text-accent-foreground',
+    ink: 'bg-foreground text-background',
+    cream: 'bg-secondary text-secondary-foreground',
+  }[a] || 'bg-secondary');
 
-				<div className="hidden md:flex items-center gap-8">
-					{navLinks.map((link) => (
-						<a
-							key={link.href}
-							href={link.href}
-							className="text-[15px] font-semibold text-slate-700 no-underline transition-colors duration-200 hover:text-blue-700 dark:text-slate-200 dark:hover:text-blue-300"
-						>
-							{link.label}
-						</a>
-					))}
-				</div>
+/* =====================================================  NAVBAR  ===================================================== */
+function Navbar({ theme, toggleTheme }) {
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/60">
+      <div className={`${PAGE_CONTAINER} flex h-16 items-center justify-between`}>
+        <Link to="/" className="flex items-center gap-2.5 group" data-testid="nav-logo">
+          <LogoMarkIcon size={32} />
+          <span className="font-display text-[22px] leading-none tracking-tight text-foreground">Unisphere</span>
+        </Link>
 
-				<Link
-					to="/login"
-					className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-[15px] font-semibold text-white no-underline transition-colors duration-200 hover:bg-blue-800"
-				>
-					Login <ArrowRightIcon size={16} />
-				</Link>
-			</nav>
-		</header>
-	);
+        <nav className="hidden md:flex items-center gap-8 text-sm">
+          {navLinks.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="relative text-muted-foreground hover:text-foreground transition-colors"
+              data-testid={`nav-link-${l.label.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border hover:bg-secondary transition text-foreground"
+            data-testid="theme-toggle"
+          >
+            {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+          </button>
+          <Link
+            to="/login"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-sm font-medium text-background hover:opacity-90 transition"
+            data-testid="nav-cta"
+          >
+            Sign in <ArrowRightIcon size={14} />
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
 }
 
+/* =====================================================  HERO  ===================================================== */
 function HeroSection() {
-	return (
-		<section id="about" className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
-			<div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,0.15),transparent_58%),radial-gradient(circle_at_85%_15%,rgba(20,184,166,0.14),transparent_50%)]" />
+  return (
+    <section id="about" className="relative overflow-hidden grain">
+      <div className={`${PAGE_CONTAINER} relative pt-14 pb-24 md:pt-20 md:pb-32`}>
+        <div className="absolute right-0 top-12 hidden lg:block h-[420px] w-[420px] dotted-grid opacity-60 -z-10 rounded-full gradient-mask-b" />
 
-			<div className={`${PAGE_CONTAINER} relative grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14`}>
-				<div className="lg:col-span-5 text-center lg:text-left">
-					<span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[12px] font-bold uppercase tracking-wide text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300">
-						Campus Collaboration Platform
-					</span>
+        <div className="grid lg:grid-cols-12 gap-10 items-end">
+          <div className="lg:col-span-7">
+            <div className="rise rise-1 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-mono uppercase tracking-widest text-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+              University Club & Event Platform
+            </div>
 
-					<h1 className="mt-6 font-heading text-[clamp(40px,5.5vw,72px)] font-extrabold leading-[1.05] tracking-[-0.035em] text-slate-900 dark:text-slate-100">
-						One place to run your campus ecosystem.
-					</h1>
+            <h1 className="rise rise-2 mt-6 font-display text-[clamp(3rem,7.2vw,6.5rem)] leading-[0.95] tracking-tight text-balance text-foreground">
+              One place to run<br />
+              your <em className="not-italic underline-citron font-display">campus</em> ecosystem.
+            </h1>
 
-					<p className="mt-6 text-[19px] leading-[1.65] text-slate-600 dark:text-slate-300">
-						Unisphere helps students, faculty, and admins collaborate with less confusion and more speed through one unified digital workspace.
-					</p>
+            <p className="rise rise-3 mt-7 max-w-xl text-lg text-muted-foreground leading-relaxed">
+              Unisphere replaces WhatsApp groups, paper flyers, and scattered spreadsheets with a structured, approval-gated platform for
+              <span className="text-foreground"> clubs, events, and campus communication.</span>
+            </p>
 
-					<div className="mt-10 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-						<Link
-							to="/login"
-							className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-blue-700 px-7 py-3.5 text-[16px] font-semibold text-white no-underline transition-colors duration-200 hover:bg-blue-800"
-						>
-							Get Started <ArrowRightIcon size={16} />
-						</Link>
-						<a
-							href="#features"
-							className="inline-flex w-full sm:w-auto items-center justify-center rounded-2xl border border-slate-300 px-7 py-3.5 text-[16px] font-semibold text-slate-800 no-underline transition-colors duration-200 hover:border-blue-700 hover:text-blue-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-300 dark:hover:text-blue-300"
-						>
-							Explore Features
-						</a>
-					</div>
-				</div>
+            <div className="rise rise-4 mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                to="/login"
+                className="group inline-flex h-12 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background hover:opacity-90 transition"
+                data-testid="hero-cta-start"
+              >
+                Get Started
+                <ArrowRightIcon size={16} />
+              </Link>
+              <a
+                href="#features"
+                className="group inline-flex h-12 items-center gap-2 rounded-full border border-border px-6 text-sm font-medium hover:bg-secondary transition text-foreground"
+                data-testid="hero-cta-explore"
+              >
+                Explore Features
+                <ChevronDownIcon size={16} />
+              </a>
+            </div>
 
-				<div className="lg:col-span-7">
-					<div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_25px_60px_-20px_rgba(15,23,42,0.25)] dark:border-slate-800 dark:bg-slate-900">
-						<img
-							src="/hero-students.png"
-							alt="Students using the Unisphere platform"
-							className="block h-full w-full aspect-16/10 object-cover"
-						/>
+          </div>
 
-						<div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 rounded-2xl border border-slate-200 bg-white/90 p-4 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/90">
-							<div className="flex items-center gap-4">
-								<div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white">
-									<ShieldCheckIcon size={22} color="white" />
-								</div>
-								<div>
-									<p className="font-heading text-[18px] font-bold text-slate-900 dark:text-slate-100">Reliable and secure workflows</p>
-									<p className="text-[14px] text-slate-600 dark:text-slate-300">Built for approvals, events, and campus-wide coordination.</p>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-	);
+          {/* Hero composition: stacked cards mock */}
+          <div className="lg:col-span-5 relative rise rise-3">
+            <div className="relative h-[520px] sm:h-[560px]">
+              {/* Big primary card */}
+              <div className="absolute right-0 top-24 w-[88%] rounded-3xl bg-card border border-border ring-soft p-5 animate-float">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-sage text-sage-foreground grid place-items-center">
+                      <TeamIcon size={14} strokeWidth={2} color="currentColor" />
+                    </div>
+                    <div className="text-sm font-medium text-foreground">Robotics Club · Proposal</div>
+                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">EVT-218</span>
+                </div>
+                <div className="mt-4 font-display text-2xl leading-tight text-foreground">"Tech Fest 2026" — Annual hackathon</div>
+                <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+                  {['120 RSVPs', 'Sat · 10 AM', 'Pending Approval'].map((t) => (
+                    <span key={t} className="rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center justify-between">
+                  <div className="flex -space-x-2">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-7 w-7 rounded-full border-2 border-card ${
+                          ['bg-accent', 'bg-sage', 'bg-foreground', 'bg-secondary'][i]
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground">
+                    <CheckCircleIcon size={14} color="currentColor" /> Approve
+                  </button>
+                </div>
+              </div>
+
+              {/* Floating notification chip */}
+              <div
+                className="absolute right-[-8px] top-0 z-10 rounded-2xl bg-foreground text-background px-4 py-3 shadow-lg max-w-[280px] animate-float"
+                style={{ animationDelay: '1.2s' }}
+              >
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest opacity-70">
+                  <BellIcon size={12} color="currentColor" /> New approval
+                </div>
+                <div className="mt-1 text-sm leading-snug">
+                  Dr. Pillai approved <span className="underline-citron text-background">"Tech Fest 2026"</span>
+                </div>
+              </div>
+
+              {/* Sparkle accent */}
+              <div className="absolute left-[8%] top-[18%] h-3 w-3 rotate-45 bg-accent" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
+/* =====================================================  PROBLEMS  ===================================================== */
 function ProblemSolvedSection() {
-	return (
-		<section id="problems" className="py-20 md:py-24 lg:py-28">
-			<div className={`${PAGE_CONTAINER} grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14`}>
-				<div className="lg:col-span-5">
-					<h2 className="font-heading text-[clamp(30px,4vw,46px)] font-bold leading-[1.12] tracking-[-0.02em] text-slate-900 dark:text-slate-100">
-						Problems we solve for your campus
-					</h2>
-					<p className="mt-5 text-[18px] leading-[1.7] text-slate-600 dark:text-slate-300">
-						We remove daily friction from campus operations by replacing disconnected tools with one consistent system.
-					</p>
-				</div>
+  return (
+    <section id="problems" className="relative py-24 md:py-32 bg-secondary/40">
+      <div className={PAGE_CONTAINER}>
+        <div className="grid lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-4">
+            <div className="text-xs font-mono uppercase tracking-[0.22em] text-muted-foreground">— What we fix</div>
+            <h2 className="mt-4 font-display text-5xl md:text-6xl leading-[0.95] tracking-tight text-foreground">
+              Campus life<br />
+              deserves <em className="not-italic underline-citron">better</em>
+              <br />
+              tooling.
+            </h2>
+            <p className="mt-6 text-muted-foreground max-w-sm">
+              We replace the messy patchwork of WhatsApp, Sheets, and printed forms with a single, calm system designed for the way modern institutions actually work.
+            </p>
+          </div>
 
-				<div className="lg:col-span-7 grid grid-cols-1 gap-5">
-					{problemPoints.map((item) => (
-						<article
-							key={item.title}
-							className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
-						>
-							<div className="flex items-start gap-4">
-								<XCircleIcon />
-								<div>
-									<h3 className="text-[20px] font-bold text-slate-900 dark:text-slate-100">{item.title}</h3>
-									<p className="mt-1 text-[15px] leading-[1.65] text-slate-600 dark:text-slate-300">{item.description}</p>
-								</div>
-							</div>
-						</article>
-					))}
-
-					<article className="rounded-2xl border border-slate-200 bg-blue-700 p-6 text-white dark:border-slate-700">
-						<div className="flex items-start gap-4">
-							<CheckCircleIcon color="#ffffff" />
-							<div>
-								<h3 className="text-[20px] font-bold">Result: Faster decisions and better student engagement</h3>
-								<p className="mt-1 text-[15px] leading-[1.65] text-white/90">
-									Teams spend less time coordinating tools and more time executing events, programs, and impactful initiatives.
-								</p>
-							</div>
-						</div>
-					</article>
-				</div>
-			</div>
-		</section>
-	);
+          <div className="lg:col-span-8 space-y-3">
+            {problemPoints.map((p, i) => (
+              <div
+                key={p.tag}
+                className="group relative grid grid-cols-12 items-center gap-4 rounded-2xl border border-border bg-card/70 p-6 hover-lift"
+                data-testid={`problem-card-${i}`}
+              >
+                <div className="col-span-2 sm:col-span-1 font-mono text-sm text-muted-foreground">{p.tag}</div>
+                <div className="col-span-9 sm:col-span-9">
+                  <div className="flex items-center gap-3">
+                    <XCircleIcon size={16} color="currentColor" />
+                    <h3 className="font-display text-2xl leading-tight text-foreground">{p.title}</h3>
+                  </div>
+                  <p className="mt-2 text-muted-foreground max-w-2xl">{p.description}</p>
+                </div>
+                <div className="col-span-1 sm:col-span-2 flex justify-end items-center gap-2">
+                  <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-accent text-accent-foreground px-3 py-1 text-[11px] font-medium">
+                    <CheckCircleIcon size={12} color="currentColor" /> Solved
+                  </div>
+                  <span className="text-muted-foreground transition-transform group-hover:rotate-45">
+                    <ArrowUpRightIcon size={18} />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
+/* =====================================================  FEATURES  ===================================================== */
 function FeaturesSection() {
-	return (
-		<section id="features" className="py-20 md:py-24 lg:py-28 bg-white dark:bg-slate-900/60">
-			<div className={PAGE_CONTAINER}>
-				<div className="text-center">
-					<h2 className="font-heading text-[clamp(30px,4vw,46px)] font-bold tracking-[-0.02em] text-slate-900 dark:text-slate-100">
-						Features that make operations smooth
-					</h2>
-					<p className="mt-4 mx-auto max-w-3xl text-[18px] leading-[1.7] text-slate-600 dark:text-slate-300">
-						Designed to improve communication, accountability, and speed across every role in your institution.
-					</p>
-				</div>
+  return (
+    <section id="features" className="relative py-24 md:py-32">
+      <div className={PAGE_CONTAINER}>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-14">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-[0.22em] text-muted-foreground">— Capabilities</div>
+            <h2 className="mt-4 font-display text-5xl md:text-6xl leading-[0.95] tracking-tight max-w-3xl text-foreground">
+              Everything campus life needs, <em className="not-italic underline-citron">nothing</em> it doesn't.
+            </h2>
+          </div>
+        </div>
 
-				<div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-					{featureCards.map((feature) => (
-						<article
-							key={feature.title}
-							className="rounded-2xl border border-slate-200 bg-white p-7 dark:border-slate-700 dark:bg-slate-900"
-						>
-							<div className={`flex h-12 w-12 items-center justify-center rounded-xl ${feature.iconClass}`}>
-								{feature.icon}
-							</div>
-							<h3 className="mt-5 text-[21px] font-bold text-slate-900 dark:text-slate-100">{feature.title}</h3>
-							<p className="mt-2 text-[15px] leading-[1.65] text-slate-600 dark:text-slate-300">{feature.description}</p>
-						</article>
-					))}
-				</div>
-			</div>
-		</section>
-	);
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {featureCards.map((f, i) => {
+            const Icon = f.Icon;
+            return (
+              <article
+                key={f.title}
+                className="group relative overflow-hidden rounded-3xl border border-border bg-card p-7 hover-lift"
+                data-testid={`feature-card-${i}`}
+              >
+                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accentBg(f.accent)}`}>
+                  <Icon size={20} strokeWidth={1.8} color="currentColor" />
+                </div>
+                <div className="mt-6 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">{f.eyebrow}</div>
+                <h3 className="mt-2 font-display text-2xl leading-tight text-foreground">{f.title}</h3>
+                <p className="mt-3 text-muted-foreground leading-relaxed">{f.description}</p>
+
+                <div className="pointer-events-none absolute -right-12 -bottom-12 h-40 w-40 rounded-full bg-accent/0 group-hover:bg-accent/10 transition-colors" />
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
 }
 
-function ExtraSection() {
-	return (
-		<section className="py-20 md:py-24 lg:py-28">
-			<div className={PAGE_CONTAINER}>
-				<div className="rounded-[28px] border border-slate-200 bg-white p-8 md:p-12 dark:border-slate-700 dark:bg-slate-900">
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-						<div>
-							<p className="text-[14px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Active clubs</p>
-							<p className="mt-2 font-heading text-[44px] font-extrabold text-slate-900 dark:text-slate-100">450+</p>
-						</div>
-						<div>
-							<p className="text-[14px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Campus users</p>
-							<p className="mt-2 font-heading text-[44px] font-extrabold text-slate-900 dark:text-slate-100">12K+</p>
-						</div>
-						<div>
-							<p className="text-[14px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Approval speed</p>
-							<p className="mt-2 font-heading text-[44px] font-extrabold text-slate-900 dark:text-slate-100">3x</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-	);
-}
-
+/* =====================================================  CTA  ===================================================== */
 function CTASection() {
-	return (
-		<section className="py-20 md:py-24 lg:py-28">
-			<div className={PAGE_CONTAINER}>
-				<div className="rounded-[28px] bg-blue-700 p-8 md:p-12 text-white text-center">
-					<h2 className="font-heading text-[clamp(34px,4.5vw,56px)] font-extrabold tracking-[-0.02em]">
-						Ready to upgrade your campus experience?
-					</h2>
-					<p className="mt-4 mx-auto max-w-2xl text-[18px] leading-[1.7] text-white/90">
-						Start with Unisphere and bring students, faculty, and administrators into one connected and efficient system.
-					</p>
-					<Link
-						to="/login"
-						className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-3.5 text-[16px] font-bold text-blue-700 no-underline transition-transform duration-200 hover:-translate-y-0.5"
-					>
-						Start Now <ArrowRightIcon size={16} />
-					</Link>
-				</div>
-			</div>
-		</section>
-	);
+  return (
+    <section className="relative py-24 md:py-32">
+      <div className={PAGE_CONTAINER}>
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-foreground text-background p-10 md:p-16 grain">
+          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/30 blur-3xl" />
+          <div className="absolute right-0 bottom-0 h-40 w-40 dotted-grid opacity-20" />
+
+          <div className="relative grid md:grid-cols-12 gap-10 items-end">
+            <div className="md:col-span-8">
+              <div className="text-xs font-mono uppercase tracking-[0.22em] text-background/60">— Ready when you are</div>
+              <h3 className="mt-4 font-display text-5xl md:text-7xl leading-[0.92] tracking-tight">
+  Students discover. Leaders propose. Faculty approve.{' '}
+  <em className="not-italic text-accent">Admins oversee.</em>
+</h3>
+            </div>
+            <div className="md:col-span-4 flex flex-wrap gap-3 md:justify-end">
+              <Link
+                to="/login"
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 text-sm font-medium hover:opacity-90 transition"
+                data-testid="cta-primary"
+              >
+                Get Started <ArrowRightIcon size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
+/* =====================================================  FOOTER  ===================================================== */
 function Footer() {
-	return (
-		<footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-			<div className={`${PAGE_CONTAINER} py-8 flex flex-col sm:flex-row items-center justify-between gap-3`}>
-				<p className="text-[14px] text-slate-600 dark:text-slate-300">
-					(c) {new Date().getFullYear()} Unisphere. All rights reserved.
-				</p>
-				<p className="text-[14px] text-slate-600 dark:text-slate-300">Built for modern education ecosystems</p>
-			</div>
-		</footer>
-	);
+  return (
+    <footer className="relative border-t border-border">
+      <div className={`${PAGE_CONTAINER} py-6`}>
+          <div className="text-xs text-muted-foreground font-mono text-center">© {new Date().getFullYear()} Unisphere · Built for campuses that care</div>
+
+        {/* Massive editorial wordmark */}
+        <div className="pointer-events-none mt-4 select-none overflow-hidden">
+          <div className="font-display text-[clamp(5rem,18vw,18rem)] leading-[0.85] tracking-[-0.04em] text-foreground/5 text-center">
+            unisphere.
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
 }
 
+/* =====================================================  PAGE  ===================================================== */
 export default function LandingPage() {
-	const { theme, toggleTheme } = useThemeContext();
+  const { theme, toggleTheme } = useThemeContext();
 
-	return (
-		<div className="min-h-screen bg-indigo-50 dark:bg-gray-900 font-sans transition-colors duration-300">
-			<Navbar theme={theme} onToggleTheme={toggleTheme} />
-			<main>
-				<HeroSection />
-				<ProblemSolvedSection />
-				<FeaturesSection />
-				<ExtraSection />
-				<CTASection />
-			</main>
-			<Footer />
-		</div>
-	);
+  return (
+    <div id="top" className="min-h-screen bg-background text-foreground antialiased">
+      <Navbar theme={theme} toggleTheme={toggleTheme} />
+      <main>
+        <HeroSection />
+        <ProblemSolvedSection />
+        <FeaturesSection />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
+  );
 }
-
