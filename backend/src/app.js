@@ -28,10 +28,25 @@ const app = express();
 // Security: Helmet for HTTP Headers
 app.use(helmet());
 
+// CORS — MUST be applied BEFORE rate limiter so that 429 responses
+// (and any other early short-circuited responses) still carry the
+// Access-Control-Allow-Origin header. Otherwise the browser treats
+// rate-limited responses as CORS failures.
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
+
 // Security: Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Bumped from 100 to accommodate background polling + multi-tab usage
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Don't count CORS preflight requests against the limit
+    skip: (req) => req.method === 'OPTIONS',
     message: {
         success: false,
         message: "Too many requests from this IP, please try again after 15 minutes"
@@ -39,12 +54,6 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-}));
 app.use(express.json({ limit: '10kb' })); // Body limiting
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static('public'));
