@@ -119,7 +119,6 @@ export default function StudentUploadPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Phase 4</p>
           <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">Student Upload</h1>
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
             Validate CSV structure before upload, preview incoming records, flag duplicates, and review temporary passwords for newly created users.
