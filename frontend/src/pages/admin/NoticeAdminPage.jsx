@@ -14,41 +14,114 @@ import {
   MoreVertical,
   CheckCircle2,
   XCircle,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { api } from '@/api/axios';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/utils/cn';
+import { createNotice } from '@/services/noticeService';
 
 export default function NoticeAdminPage() {
   useDocumentTitle('Platform Announcements | Unisphere');
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    priority: 'medium',
+    targetAudience: 'all',
+    targetDepartment: '',
+    targetClub: '',
+    expiresAt: ''
+  });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch: refetchNotices } = useQuery({
     queryKey: ['notices-admin', search, priorityFilter],
     queryFn: async () => {
       const { data } = await api.get('/api/v1/notices', {
         params: { search, priority: priorityFilter, limit: 50 }
       });
       return data.data.notices;
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/api/v1/notices/${id}`),
     onSuccess: () => {
       toast.success('Notice deleted successfully');
-      queryClient.invalidateQueries(['notices-admin']);
+      queryClient.invalidateQueries({ queryKey: ['notices-admin'] });
+      refetchNotices();
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete notice'),
   });
+
+  const createMutation = useMutation({
+    mutationFn: (payload) => createNotice(payload),
+    onSuccess: () => {
+      toast.success('Notice published successfully');
+      queryClient.invalidateQueries({ queryKey: ['notices-admin'] });
+      refetchNotices();
+      setShowCreateModal(false);
+      setFormData({
+        title: '',
+        content: '',
+        priority: 'medium',
+        targetAudience: 'all',
+        targetDepartment: '',
+        targetClub: '',
+        expiresAt: ''
+      });
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to publish notice'),
+  });
+
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'targetAudience' ? { targetDepartment: '', targetClub: '' } : {})
+    }));
+  };
+
+  const handleCreateNotice = (e) => {
+    e.preventDefault();
+
+    if (!formData.title.trim() || !formData.content.trim()) {
+      toast.error('Title and content are required');
+      return;
+    }
+
+    if (formData.targetAudience === 'department' && !formData.targetDepartment.trim()) {
+      toast.error('Department is required for department-targeted notices');
+      return;
+    }
+
+    const payload = {
+      title: formData.title.trim(),
+      content: formData.content.trim(),
+      priority: formData.priority,
+      targetAudience: formData.targetAudience,
+      targetDepartment: formData.targetAudience === 'department' ? formData.targetDepartment.trim() : null,
+      targetClub: formData.targetAudience === 'club' ? formData.targetClub : null,
+      expiresAt: formData.expiresAt || null
+    };
+
+    createMutation.mutate(payload);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -63,7 +136,7 @@ export default function NoticeAdminPage() {
             Publish university-wide notices, manage club bulletins, and broadcast urgent alerts.
           </p>
         </div>
-        <Button className="rounded-2xl h-12 px-6 bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-500/20">
+        <Button className="rounded-2xl h-12 px-6 bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-500/20" onClick={() => setShowCreateModal(true)}>
           <Plus className="mr-2 h-5 w-5" /> Broadcast New Notice
         </Button>
       </section>
@@ -178,6 +251,127 @@ export default function NoticeAdminPage() {
                  </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Create Notice Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Broadcast New Notice</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNotice} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Title
+                  </label>
+                  <Input
+                    placeholder="Notice title"
+                    value={formData.title}
+                    onChange={(e) => handleFormChange('title', e.target.value)}
+                    className="rounded-2xl h-12"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Priority
+                  </label>
+                  <Select
+                    value={formData.priority}
+                    onChange={(e) => handleFormChange('priority', e.target.value)}
+                    options={[
+                      { value: 'low', label: 'Low' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'high', label: 'High' },
+                      { value: 'urgent', label: 'Urgent' }
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Target Audience
+                  </label>
+                  <Select
+                    value={formData.targetAudience}
+                    onChange={(e) => handleFormChange('targetAudience', e.target.value)}
+                    options={[
+                      { value: 'all', label: 'All Users' },
+                      { value: 'department', label: 'Department' }
+                    ]}
+                  />
+                </div>
+
+                {formData.targetAudience === 'department' && (
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                      Department
+                    </label>
+                    <Input
+                      placeholder="Department name"
+                      value={formData.targetDepartment}
+                      onChange={(e) => handleFormChange('targetDepartment', e.target.value)}
+                      className="rounded-2xl h-12"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Expiry Date
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.expiresAt}
+                    onChange={(e) => handleFormChange('expiresAt', e.target.value)}
+                    className="rounded-2xl h-12"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                  Content
+                </label>
+                <Textarea
+                  placeholder="Write the full notice content"
+                  value={formData.content}
+                  onChange={(e) => handleFormChange('content', e.target.value)}
+                  rows={6}
+                  className="rounded-2xl"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 rounded-2xl h-12 font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 rounded-2xl h-12 bg-rose-600 hover:bg-rose-700 font-semibold"
+                  isLoading={createMutation.isPending}
+                >
+                  Publish Notice
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
