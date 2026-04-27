@@ -76,7 +76,6 @@ export default function RegistrationsAdminPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Phase 4</p>
         <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">Registrations Administration</h1>
         <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
           Select an event, review registrants, filter by status, export attendance CSV, and apply single or bulk attendance outcomes.
