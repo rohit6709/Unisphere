@@ -117,7 +117,6 @@ export default function ClubLeadershipPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Phase 6</p>
         <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">Club Leadership Management</h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           Select a club, review current leaders, search candidates, and apply leadership updates safely.
