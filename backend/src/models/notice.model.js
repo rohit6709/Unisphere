@@ -45,9 +45,12 @@ const noticeSchema = new mongoose.Schema(
         },
         // ─── Attachment ───────────────────────────────────────────────────────
         attachment: {
-            url: { type: String, default: null },
-            filename: { type: String, default: null },
-            mimetype: { type: String, default: null },
+            type: {
+                url: { type: String, default: null },
+                filename: { type: String, default: null },
+                mimetype: { type: String, default: null },
+            },
+            default: {},
         },
         // ─── Expiry ───────────────────────────────────────────────────────────
         expiresAt: {
@@ -69,6 +72,7 @@ const noticeSchema = new mongoose.Schema(
 );
 
 // ─── Index for faster queries ─────────────────────────────────────────────────
+noticeSchema.index({ postedBy: 1 });
 noticeSchema.index({ targetAudience: 1, targetDepartment: 1 });
 noticeSchema.index({ targetClub: 1 });
 noticeSchema.index({ expiresAt: 1 });
