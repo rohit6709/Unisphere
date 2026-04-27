@@ -1,22 +1,12 @@
 <div align="center">
 
-# 🌐 Unisphere
+# Unisphere
 ### *One platform for every club, every event, every student.*
-
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
-[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
-[![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
-
 </div>
 
 ---
 
-## 📖 About the Project
+## About the Project
 
 Unisphere is a unified university platform that solves the three biggest pain points in campus life: **club discovery, event awareness, and communication chaos.** Every university has dozens of clubs and events, yet students — especially freshers — routinely miss out because there is no single, structured place to find, join, and engage with them.
 
@@ -24,32 +14,30 @@ Unisphere replaces scattered WhatsApp groups, paper flyers, and word-of-mouth wi
 
 > **The Core Insight:** University club and event management is broken not because of lack of interest — but because of lack of infrastructure. Unisphere is that infrastructure.
 
-### The Problem
-
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🎯 Interest-Based Club Discovery
+### Interest-Based Club Discovery
 Students select interest tags on signup. Unisphere surfaces a curated, relevance-ranked shortlist of clubs instantly — the highest-impact moment for freshers. One-click join. No forms.
 
-### 📅 Event Lifecycle & Approval Workflow
+### Event Lifecycle & Approval Workflow
 Every event is faculty-gated before going live:
 ```
 📝 Draft  →  ⏳ Pending Review  →  ✅ Approved  →  🎉 Active  →  🔒 Closed
 ```
 Club admins create events. Faculty advisors approve or reject with written reasons. Only approved events are visible for registration.
 
-### 📊 Student Dashboard
+### Student Dashboard
 Upcoming registered events, joined clubs, active group chats, and notifications from joined clubs only — all in one place.
 
-### 👨‍🏫 Faculty Approval System
-Every club is mandatorily linked to a faculty advisor — no club can exist without one. Advisors get a dedicated dashboard to review pending events with approve/reject + written feedback.
+### Faculty Approval System
+Every club must have a faculty advisor — no club can exist without one. Advisors get a dedicated dashboard to review pending events with approve/reject + written feedback.
 
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 | Student Dashboard | Club Discovery | Event Flow |
 |:-:|:-:|:-:|
@@ -61,7 +49,7 @@ Every club is mandatorily linked to a faculty advisor — no club can exist with
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 | Technology | Purpose |
@@ -80,13 +68,12 @@ Every club is mandatorily linked to a faculty advisor — no club can exist with
 | MongoDB + Mongoose | Database & schema validation |
 | Socket.io | Real-time bidirectional messaging |
 | BullMQ + Redis | Background jobs for auto-group dissolution |
-| Firebase Admin SDK | Push notifications via FCM |
 | JSON Web Tokens | Stateless authentication |
 | bcrypt.js | Password hashing |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -173,9 +160,7 @@ cd frontend && npm run dev
 
 ---
 
-## 🔒 Security Protocols
- 
-## 🔒 Security Protocols
+## Security 
 
 - JWT access + refresh token rotation — verified on every protected route
 - Passwords hashed with `bcrypt` — never stored in plain text
@@ -183,7 +168,7 @@ cd frontend && npm run dev
 - Rate limiting applied across all API endpoints — socket connections excluded
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
