@@ -76,7 +76,6 @@ export default function IntegrationHealthPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Phase 8</p>
           <h1 className="mt-1 text-3xl font-black text-gray-900 dark:text-white">Integration Health</h1>
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
             Live smoke checks for critical frontend-to-backend service connections.
