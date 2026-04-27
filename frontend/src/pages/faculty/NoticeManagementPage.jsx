@@ -39,9 +39,12 @@ export default function FacultyNoticeManagementPage() {
   const [editingNoticeId, setEditingNoticeId] = useState('');
   const [minExpiryValue] = useState(getMinExpiryValue);
 
-  const { data: postedData, isLoading } = useQuery({
+  const { data: postedData, isLoading, refetch: refetchNotices } = useQuery({
     queryKey: ['faculty-posted-notices'],
     queryFn: () => getMyPostedNotices({ page: 1, limit: 100 }),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0,
   });
 
   const { data: advisedClubData } = useQuery({
@@ -62,6 +65,8 @@ export default function FacultyNoticeManagementPage() {
     onSuccess: () => {
       toast.success(editingNoticeId ? 'Notice updated successfully' : 'Notice created successfully');
       queryClient.invalidateQueries({ queryKey: ['faculty-posted-notices'] });
+      // Explicitly refetch to ensure immediate update
+      refetchNotices();
       setEditingNoticeId('');
       setForm(defaultForm);
     },
@@ -75,6 +80,7 @@ export default function FacultyNoticeManagementPage() {
     onSuccess: () => {
       toast.success('Notice deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['faculty-posted-notices'] });
+      refetchNotices();
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || error?.message || 'Failed to delete notice');
@@ -86,6 +92,7 @@ export default function FacultyNoticeManagementPage() {
     onSuccess: () => {
       toast.success('Notice marked as expired');
       queryClient.invalidateQueries({ queryKey: ['faculty-posted-notices'] });
+      refetchNotices();
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || error?.message || 'Failed to expire notice');
