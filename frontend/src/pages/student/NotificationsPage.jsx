@@ -141,7 +141,6 @@ export default function NotificationsPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">Phase 5</p>
           <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
             Review platform activity in one place, filter unread items, jump to related resources, and keep the unread count under control.
